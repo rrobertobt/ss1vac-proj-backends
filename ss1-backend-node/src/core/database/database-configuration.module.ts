@@ -2,15 +2,16 @@ import { Global, Module } from '@nestjs/common';
 import * as Knex from 'knex';
 import { Model } from 'objection';
 import * as dotenv from 'dotenv';
+import { UserModel } from 'src/modules/users/entities/user.entity';
 
 dotenv.config();
 
 // Insert database models here
-const models: Model[] = [];
+const models = [UserModel];
 
 const modelProviders = models.map((model) => {
   return {
-    provide: model?.$modelClass?.name,
+    provide: model.name,
     useValue: model,
   };
 });

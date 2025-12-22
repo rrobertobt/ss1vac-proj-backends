@@ -437,7 +437,7 @@ VALUES
   (
     'superadmin@psifirm.local',
     'superadmin',
-    'REPLACE_WITH_BCRYPT_HASH',
+    '$2a$12$MOQvgXcUJyOqXgcuw/QG9.3qorXKb7ge.Bv0PnE3kGRofCTV9QRQK',
     (
       SELECT
         id

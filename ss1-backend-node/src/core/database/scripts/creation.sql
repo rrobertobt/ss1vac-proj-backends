@@ -50,6 +50,12 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   role_id BIGINT NOT NULL REFERENCES roles(id),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  two_fa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  two_fa_secret VARCHAR(255),
+  two_fa_expires_at TIMESTAMPTZ,
+  two_fa_attempts INTEGER NOT NULL DEFAULT 0,
+  password_reset_token VARCHAR(255),
+  password_reset_expires TIMESTAMPTZ,
   last_login_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

@@ -1,0 +1,27 @@
+import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtModule } from '@nestjs/jwt';
+import { UsersModule } from '../users/users.module';
+import { LocalStrategy } from 'src/core/auth/strategies/local.strategy';
+import { JwtStrategy } from 'src/core/auth/strategies/jwt.strategy';
+import { SesMailService } from '../mail/ses-mail.service';
+
+@Module({
+  imports: [
+    UsersModule,
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_ACCESS_SECRET,
+      signOptions: {
+        expiresIn: process.env.TOKEN_EXPIRATION
+          ? parseInt(process.env.TOKEN_EXPIRATION)
+          : '24h',
+      },
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, LocalStrategy, JwtStrategy, SesMailService],
+  exports: [AuthService],
+})
+export class AuthModule {}
