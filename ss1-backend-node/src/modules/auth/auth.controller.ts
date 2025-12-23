@@ -14,8 +14,21 @@ import { JwtAuthGuard } from 'src/core/auth/guards/jwt-auth.guard';
 import { TwoFaVerifyDto } from './dto/twofa-verify.dto';
 import { UserModel } from '../users/entities/user.entity';
 
+interface JwtUser {
+  id: number;
+  email: string;
+  username: string;
+  roleId: number;
+  roleName: string | null;
+  twoFaEnabled: boolean;
+}
+
 interface AuthenticatedRequest extends Request {
   user: UserModel;
+}
+
+interface JwtAuthenticatedRequest extends Request {
+  user: JwtUser;
 }
 
 @Controller('auth')
@@ -76,7 +89,7 @@ export class AuthController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('2fa/enable/request')
-  async requestEnableTwoFa(@Req() req: AuthenticatedRequest) {
+  async requestEnableTwoFa(@Req() req: JwtAuthenticatedRequest) {
     const userId = req.user.id;
     const challengeId = await this.authService.startTwoFaToggle(
       userId,
@@ -91,7 +104,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('2fa/enable/confirm')
   async confirmEnableTwoFa(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: JwtAuthenticatedRequest,
     @Body() dto: TwoFaVerifyDto,
   ) {
     const userId = req.user.id;
@@ -110,7 +123,7 @@ export class AuthController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('2fa/disable/request')
-  async requestDisableTwoFa(@Req() req: AuthenticatedRequest) {
+  async requestDisableTwoFa(@Req() req: JwtAuthenticatedRequest) {
     const userId = req.user.id;
     const challengeId = await this.authService.startTwoFaToggle(
       userId,
@@ -125,7 +138,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('2fa/disable/confirm')
   async confirmDisableTwoFa(
-    @Req() req: AuthenticatedRequest,
+    @Req() req: JwtAuthenticatedRequest,
     @Body() dto: TwoFaVerifyDto,
   ) {
     const userId = req.user.id;
@@ -141,10 +154,16 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')
-  getProfile(@Req() req: AuthenticatedRequest) {
+  getProfile(@Req() req: JwtAuthenticatedRequest) {
     return {
-      message: 'perfil protegido',
-      user: req.user,
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        username: req.user.username,
+        roleId: req.user.roleId,
+        roleName: req.user.roleName,
+        twoFaEnabled: req.user.twoFaEnabled,
+      },
     };
   }
 }

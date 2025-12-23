@@ -10,18 +10,24 @@ export class UsersService {
   ) {}
 
   async findByEmailOrUsername(emailOrUsername: string, trx?: Transaction) {
-    return await this.userModel
+    const user = await this.userModel
       .query(trx)
       .where('email', emailOrUsername)
       .orWhere('username', emailOrUsername)
+      .withGraphFetched('role')
       .first();
+    console.log('findByEmailOrUsername found user:', user);
+    return user;
   }
 
   async findById(
     id: number,
     trx?: Transaction,
   ): Promise<UserModel | undefined> {
-    const query = await this.userModel.query(trx).findById(id);
+    const query = await this.userModel
+      .query(trx)
+      .findById(id)
+      .withGraphFetched('role');
     delete query?.password_hash;
     return query;
   }

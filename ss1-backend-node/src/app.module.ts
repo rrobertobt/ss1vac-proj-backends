@@ -7,6 +7,7 @@ import { DatabaseConfigurationModule } from './core/database/database-configurat
 import { DatabaseTransactionModule } from './core/database/transaction/database-transaction.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './modules/users/users.module';
     DatabaseTransactionModule,
     AuthModule,
     UsersModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

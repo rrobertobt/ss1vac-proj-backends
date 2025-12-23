@@ -1,4 +1,5 @@
-import { Model } from 'objection';
+import { Model, RelationMappings, RelationMappingsThunk } from 'objection';
+import { RoleModel } from 'src/modules/roles/entities/role.entity';
 
 export class UserModel extends Model {
   static tableName = 'users';
@@ -18,4 +19,20 @@ export class UserModel extends Model {
   password_reset_expires: Date | null;
   created_at: Date;
   updated_at: Date;
+
+  // Relación con Role
+  role?: RoleModel;
+
+  static get relationMappings(): RelationMappings | RelationMappingsThunk {
+    return {
+      role: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: RoleModel,
+        join: {
+          from: 'users.role_id',
+          to: 'roles.id',
+        },
+      },
+    };
+  }
 }

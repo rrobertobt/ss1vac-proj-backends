@@ -49,6 +49,7 @@ export class AuthService {
       username: user.username,
       roleId: user.role_id,
     };
+    console.log('Issuing access token with payload:', payload);
 
     // "expira en bastante tiempo": configúralo por env, ej: 7d, 30d, etc.
     return this.jwt.signAsync(payload);
@@ -60,6 +61,7 @@ export class AuthService {
       email: user.email,
       username: user.username,
       roleId: user.role_id,
+      roleName: user.role?.name ?? null,
       twoFaEnabled: user.two_fa_enabled,
     };
   }
