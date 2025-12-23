@@ -63,6 +63,7 @@ async def me(current_user=Depends(get_current_user)):
             "username": current_user.username,
             "roleId": current_user.role_id,
             "roleName": current_user.role.name if current_user.role else None,
+            "roleLabel": current_user.role.label if current_user.role else None,
             "twoFaEnabled": current_user.two_fa_enabled,
         }
     }

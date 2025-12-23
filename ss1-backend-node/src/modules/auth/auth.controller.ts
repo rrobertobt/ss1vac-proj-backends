@@ -20,6 +20,7 @@ interface JwtUser {
   username: string;
   roleId: number;
   roleName: string | null;
+  roleLabel: string | null;
   twoFaEnabled: boolean;
 }
 
@@ -162,6 +163,7 @@ export class AuthController {
         username: req.user.username,
         roleId: req.user.roleId,
         roleName: req.user.roleName,
+        roleLabel: req.user.roleLabel,
         twoFaEnabled: req.user.twoFaEnabled,
       },
     };

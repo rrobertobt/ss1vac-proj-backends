@@ -43,6 +43,7 @@ class AuthService:
             "username": user.username,
             "roleId": user.role_id,
             "roleName": user.role.name if user.role else None,
+            "roleLabel": user.role.label if user.role else None,
             "twoFaEnabled": user.two_fa_enabled,
         }
 

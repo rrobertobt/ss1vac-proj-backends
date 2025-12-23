@@ -62,6 +62,7 @@ export class AuthService {
       username: user.username,
       roleId: user.role_id,
       roleName: user.role?.name ?? null,
+      roleLabel: user.role?.label ?? null,
       twoFaEnabled: user.two_fa_enabled,
     };
   }
@@ -137,9 +138,7 @@ export class AuthService {
   async startTwoFaLogin(userId: number): Promise<string> {
     const user = await this.usersService.findById(userId);
     if (!user || !user.is_active)
-      throw new UnauthorizedException({
-        message: 'Usuario inválido',
-      });
+      throw new UnauthorizedException('Usuario inválido');
     const code = this.generateCode();
 
     await this.storeTwoFaCode(userId, code, 10);
@@ -197,10 +196,7 @@ export class AuthService {
   // --- Enable/Disable flows ---
   async startTwoFaToggle(userId: number, action: 'enable' | 'disable') {
     const user = await this.usersService.findById(userId);
-    if (!user)
-      throw new UnauthorizedException({
-        message: 'Usuario inválido',
-      });
+    if (!user) throw new UnauthorizedException('Usuario inválido');
     const code = this.generateCode();
 
     await this.storeTwoFaCode(userId, code, 10);
