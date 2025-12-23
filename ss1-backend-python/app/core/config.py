@@ -16,9 +16,9 @@ class Settings(BaseModel):
     JWT_2FA_SECRET: str = os.getenv("JWT_2FA_SECRET", "change-me-2fa")
     JWT_2FA_EXPIRES_IN: str = os.getenv("JWT_2FA_EXPIRES_IN", "10m")
 
-    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
-    AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "")
-    AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    # Mail Mailtrap configuration
+    MAILTRAP_API_TOKEN: str = os.getenv("MAILTRAP_TOKEN", "")
     MAIL_FROM: str = os.getenv("MAIL_FROM", "")
+    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME", "PsiFirm")
 
 settings = Settings()
