@@ -16,7 +16,6 @@ interface JwtAccessPayload {
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private readonly usersService: UsersService) {
     const secret = process.env.JWT_ACCESS_SECRET;
-    console.log('JWT Access Secret:', secret);
     if (!secret) {
       throw new Error(
         'JWT_ACCESS_SECRET is not defined in environment variables',
@@ -31,7 +30,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtAccessPayload) {
-    console.log('JWT Payload:', payload);
     const user = await this.usersService.findById(payload.sub);
     if (!user || !user.is_active)
       throw new UnauthorizedException('Token inválido');

@@ -142,7 +142,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   getProfile(@Req() req: AuthenticatedRequest) {
-    console.log('Authenticated user:', req.user);
     return {
       message: 'perfil protegido',
       user: req.user,

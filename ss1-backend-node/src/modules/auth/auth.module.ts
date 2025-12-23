@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from 'src/core/auth/strategies/local.strategy';
 import { JwtStrategy } from 'src/core/auth/strategies/jwt.strategy';
 import { SesMailService } from '../mail/ses-mail.service';
+import { MailService } from '../mail/mailtrap.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { SesMailService } from '../mail/ses-mail.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, SesMailService],
+  providers: [AuthService, LocalStrategy, JwtStrategy, MailService],
   exports: [AuthService],
 })
 export class AuthModule {}

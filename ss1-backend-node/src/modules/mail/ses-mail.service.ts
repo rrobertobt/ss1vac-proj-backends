@@ -1,4 +1,3 @@
-// src/mail/ses-mail.service.ts
 import { Injectable } from '@nestjs/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 

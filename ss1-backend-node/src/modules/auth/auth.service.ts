@@ -2,9 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
-import { UsersService } from '../users/users.service';
-import { SesMailService } from '../mail/ses-mail.service';
+import { MailService } from '../mail/mailtrap.service';
 import { UserModel } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
 
 type TwoFaPurpose = 'login' | 'enable' | 'disable';
 
@@ -27,7 +27,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwt: JwtService,
-    private readonly mail: SesMailService,
+    private readonly mail: MailService,
   ) {}
 
   // --- LocalStrategy usa esto ---
@@ -104,7 +104,11 @@ export class AuthService {
     const subject = subjectMap[purpose];
     const text = `Tu código es: ${code}\n\nEste código expira en pocos minutos.`;
 
-    await this.mail.sendTextEmail(to, subject, text);
+    await this.mail.sendMail({
+      to,
+      subject,
+      text,
+    });
   }
 
   // --- ChallengeId: JWT temporal (NO access token) ---

@@ -21,7 +21,6 @@ export class UsersService {
     id: number,
     trx?: Transaction,
   ): Promise<UserModel | undefined> {
-    console.log('Finding user by ID:', id);
     const query = await this.userModel.query(trx).findById(id);
     delete query?.password_hash;
     return query;
