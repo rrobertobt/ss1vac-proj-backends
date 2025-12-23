@@ -3,13 +3,25 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/modules/users/users.service';
 
-interface JwtAccessPayload {
+export interface JwtAccessPayload {
   sub: number;
   email: string;
   username?: string;
   roleId: number;
+  permissions?: string[];
   iat?: number;
   exp?: number;
+}
+
+export interface JwtStrategyRetrun {
+  id: number;
+  email: string;
+  username: string;
+  roleId: number;
+  roleName: string | null;
+  roleLabel: string | null;
+  twoFaEnabled: boolean;
+  permissions: string[];
 }
 
 @Injectable()
@@ -29,10 +41,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: JwtAccessPayload) {
+  async validate(payload: JwtAccessPayload): Promise<JwtStrategyRetrun> {
     const user = await this.usersService.findById(payload.sub);
     if (!user || !user.is_active)
       throw new UnauthorizedException('Token inválido');
+
+    // Extraer códigos de permisos del rol
+    const permissions = user.role?.permissions?.map((p) => p.code) ?? [];
+    console.log('User permissions from JWT payload:', permissions);
+
     // lo que retornas aquí queda como req.user
     return {
       id: user.id,
@@ -42,6 +59,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       roleName: user.role?.name ?? null,
       roleLabel: user.role?.label ?? null,
       twoFaEnabled: user.two_fa_enabled,
+      permissions,
     };
   }
 }

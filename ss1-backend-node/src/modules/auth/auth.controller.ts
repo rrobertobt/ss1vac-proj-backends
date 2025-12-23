@@ -24,6 +24,7 @@ interface JwtUser {
   roleName: string | null;
   roleLabel: string | null;
   twoFaEnabled: boolean;
+  permissions: string[];
 }
 
 interface AuthenticatedRequest extends Request {
@@ -159,15 +160,7 @@ export class AuthController {
   @Get('/me')
   getProfile(@Req() req: JwtAuthenticatedRequest) {
     return {
-      user: {
-        id: req.user.id,
-        email: req.user.email,
-        username: req.user.username,
-        roleId: req.user.roleId,
-        roleName: req.user.roleName,
-        roleLabel: req.user.roleLabel,
-        twoFaEnabled: req.user.twoFaEnabled,
-      },
+      user: req.user,
     };
   }
 
