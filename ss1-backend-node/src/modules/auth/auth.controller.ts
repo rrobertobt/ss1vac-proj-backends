@@ -12,6 +12,8 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from 'src/core/auth/guards/local-auth.guard';
 import { JwtAuthGuard } from 'src/core/auth/guards/jwt-auth.guard';
 import { TwoFaVerifyDto } from './dto/twofa-verify.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserModel } from '../users/entities/user.entity';
 
 interface JwtUser {
@@ -167,5 +169,34 @@ export class AuthController {
         twoFaEnabled: req.user.twoFaEnabled,
       },
     };
+  }
+
+  /**
+   * Solicitar recuperación de contraseña
+   * Body: { email }
+   * - Envía código al correo (no revela si el email existe)
+   */
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.requestPasswordReset(dto.email);
+    return {
+      message: 'Si el correo existe, recibirás un código de recuperación',
+    };
+  }
+
+  /**
+   * Resetear contraseña
+   * Body: { code, newPassword }
+   * - Nota: También necesitamos el email, lo agregamos al DTO
+   */
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto & { email: string }) {
+    const result = await this.authService.resetPassword(
+      body.email,
+      body.code,
+      body.newPassword,
+    );
+    if (!result.ok) throw new UnauthorizedException(result.reason);
+    return { message: 'Contraseña actualizada exitosamente' };
   }
 }

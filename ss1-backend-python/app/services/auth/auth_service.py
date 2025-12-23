@@ -148,3 +148,57 @@ class AuthService:
             },
         )
         return {"ok": True}
+
+    async def request_password_reset(self, email: str):
+        """Solicita recuperación de contraseña - envía código al correo"""
+        user = await self.users.find_by_email_or_username(email)
+        # Por seguridad, no revelamos si el email existe o no
+        if not user or not user.is_active:
+            return
+
+        code = _gen_6_digit_code()
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+        await self.users.patch_user(
+            user.id,
+            {
+                "password_reset_token": hash_value(code),
+                "password_reset_expires": expires_at,
+            },
+        )
+
+        self.mail.send_text_email(
+            to=user.email,
+            subject="Código de recuperación de contraseña",
+            text=f"Tu código de recuperación es: {code}\n\nEste código expira en 15 minutos.",
+        )
+
+    async def reset_password(self, email: str, code: str, new_password: str):
+        """Resetea la contraseña usando el código enviado"""
+        user = await self.users.find_by_email_or_username(email)
+        if not user or not user.is_active:
+            return {"ok": False, "reason": "Usuario inválido"}
+
+        if not user.password_reset_token or not user.password_reset_expires:
+            return {"ok": False, "reason": "Código no solicitado"}
+
+        if datetime.now(timezone.utc) > user.password_reset_expires:
+            return {"ok": False, "reason": "Código expirado"}
+
+        if not verify_hash(code, user.password_reset_token):
+            return {"ok": False, "reason": "Código inválido"}
+
+        # Hash de la nueva contraseña
+        password_hash = hash_value(new_password)
+
+        # Actualizar contraseña y limpiar token
+        await self.users.patch_user(
+            user.id,
+            {
+                "password_hash": password_hash,
+                "password_reset_token": None,
+                "password_reset_expires": None,
+            },
+        )
+
+        return {"ok": True}

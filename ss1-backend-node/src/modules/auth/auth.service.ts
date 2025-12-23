@@ -20,6 +20,9 @@ interface PartialUserUpdate {
   two_fa_expires_at?: string | null;
   two_fa_attempts?: number;
   two_fa_enabled?: boolean;
+  password_reset_token?: string | null;
+  password_reset_expires?: string | null;
+  password_hash?: string;
 }
 
 @Injectable()
@@ -252,6 +255,61 @@ export class AuthService {
       two_fa_secret: null,
       two_fa_expires_at: null,
       two_fa_attempts: 0,
+    };
+    await this.usersService.update(user.id, updateData);
+
+    return { ok: true };
+  }
+
+  // --- Password Reset ---
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.usersService.findByEmailOrUsername(email);
+    // Por seguridad, no revelamos si el email existe o no
+    if (!user || !user.is_active) return;
+
+    const code = this.generateCode();
+    const codeHash = await bcrypt.hash(code, 10);
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    const updateData: PartialUserUpdate = {
+      password_reset_token: codeHash,
+      password_reset_expires: expires.toISOString(),
+    };
+    await this.usersService.update(user.id, updateData);
+
+    await this.mail.sendMail({
+      to: user.email,
+      subject: 'Código de recuperación de contraseña',
+      text: `Tu código de recuperación es: ${code}\n\nEste código expira en 15 minutos.`,
+    });
+  }
+
+  async resetPassword(
+    email: string,
+    code: string,
+    newPassword: string,
+  ): Promise<{ ok: true } | { ok: false; reason: string }> {
+    const user = await this.usersService.findByEmailOrUsername(email);
+    if (!user || !user.is_active)
+      return { ok: false, reason: 'Usuario inválido' };
+
+    if (!user.password_reset_token || !user.password_reset_expires)
+      return { ok: false, reason: 'Código no solicitado' };
+
+    const expiresAt = new Date(user.password_reset_expires).getTime();
+    if (Date.now() > expiresAt) return { ok: false, reason: 'Código expirado' };
+
+    const ok = await bcrypt.compare(code, user.password_reset_token);
+    if (!ok) return { ok: false, reason: 'Código inválido' };
+
+    // Hash de la nueva contraseña
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar contraseña y limpiar token
+    const updateData: PartialUserUpdate = {
+      password_hash: passwordHash,
+      password_reset_token: null,
+      password_reset_expires: null,
     };
     await this.usersService.update(user.id, updateData);
 

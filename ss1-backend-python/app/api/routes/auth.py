@@ -18,6 +18,14 @@ class TwoFaVerifyBody(BaseModel):
     challengeId: str
     code: str = Field(min_length=6, max_length=6)
 
+class ForgotPasswordBody(BaseModel):
+    email: str = Field(..., min_length=1)
+
+class ResetPasswordBody(BaseModel):
+    email: str = Field(..., min_length=1)
+    code: str = Field(min_length=6, max_length=6)
+    newPassword: str = Field(..., min_length=8)
+
 @router.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -103,3 +111,21 @@ async def confirm_disable_2fa(body: TwoFaVerifyBody, current_user=Depends(get_cu
     if not result["ok"]:
         raise HTTPException(status_code=401, detail=result["reason"])
     return {"twoFaEnabled": False}
+
+@router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordBody, db: AsyncSession = Depends(get_db)):
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+
+    await auth.request_password_reset(body.email)
+    return {"message": "Si el correo existe, recibirás un código de recuperación"}
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordBody, db: AsyncSession = Depends(get_db)):
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+
+    result = await auth.reset_password(body.email, body.code, body.newPassword)
+    if not result["ok"]:
+        raise HTTPException(status_code=401, detail=result["reason"])
+    return {"message": "Contraseña actualizada exitosamente"}
