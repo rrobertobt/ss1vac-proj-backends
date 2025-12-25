@@ -39,14 +39,16 @@ def _parse_expires(expires_in: str) -> timedelta:
 def create_access_token(*, subject: str, secret: str, expires_in: str, extra: Dict[str, Any] | None = None) -> str:
     now = datetime.now(timezone.utc)
     exp = now + _parse_expires(expires_in)
-    payload: Dict[str, Any] = {"sub": subject, "iat": int(now.timestamp()), "exp": exp}
+    # sub debe ser string para jose, pero manejamos int en decode
+    payload: Dict[str, Any] = {"sub": subject, "iat": int(now.timestamp()), "exp": int(exp.timestamp())}
     if extra:
         payload.update(extra)
     return jwt.encode(payload, secret, algorithm="HS256")
 
 def decode_token(token: str, secret: str) -> Optional[Dict[str, Any]]:
     try:
-        return jwt.decode(token, secret, algorithms=["HS256"])
+        # No validar 'sub' ya que puede ser int (de Node) o string (de Python)
+        return jwt.decode(token, secret, algorithms=["HS256"], options={"verify_sub": False})
     except JWTError:
         return None
 

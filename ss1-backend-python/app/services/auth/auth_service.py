@@ -33,7 +33,7 @@ class AuthService:
             subject=str(user.id),
             secret=settings.JWT_ACCESS_SECRET,
             expires_in=settings.JWT_ACCESS_EXPIRES_IN,
-            extra={"email": user.email, "roleId": user.role_id},
+            extra={"email": user.email, "username": user.username, "roleId": user.role_id},
         )
 
     def public_user(self, user):

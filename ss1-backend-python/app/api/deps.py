@@ -23,7 +23,9 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Token inválido")
 
     users = UsersRepo(db)
-    user = await users.find_by_id(int(payload["sub"]))
+    # sub puede ser int o string, asegurar que sea int
+    user_id = payload["sub"] if isinstance(payload["sub"], int) else int(payload["sub"])
+    user = await users.find_by_id(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Token inválido")
 
