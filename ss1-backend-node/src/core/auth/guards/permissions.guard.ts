@@ -1,15 +1,12 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from 'src/core/decorators/permissions.decorator';
-import {
-  JwtAccessPayload,
-  JwtStrategyRetrun,
-} from '../strategies/jwt.strategy';
+import { JwtStrategyRetrun } from '../strategies/jwt.strategy';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -30,6 +27,10 @@ export class PermissionsGuard implements CanActivate {
     }>();
     const user: JwtStrategyRetrun = request.user; // Obtenido desde el AuthGuard
 
+    if (user.roleName === 'SUPER_ADMIN') {
+      return true;
+    }
+
     // Se asume que el JWT tiene un array de permisos
     const userPermissions = user.permissions || [];
 
@@ -38,7 +39,9 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException('Permisos insuficientes');
+      throw new ForbiddenException({
+        message: 'No tienes permisos suficientes para realizar esta acción.',
+      });
     }
 
     return true;

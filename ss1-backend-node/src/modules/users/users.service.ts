@@ -14,7 +14,7 @@ export class UsersService {
       .query(trx)
       .where('email', emailOrUsername)
       .orWhere('username', emailOrUsername)
-      .withGraphFetched('role.permissions')
+      .withGraphFetched('[role.permissions, employee, patient]')
       .first();
     console.log('findByEmailOrUsername found user:', user);
     return user;
@@ -27,7 +27,7 @@ export class UsersService {
     const query = await this.userModel
       .query(trx)
       .findById(id)
-      .withGraphFetched('role.permissions');
+      .withGraphFetched('[role.permissions, employee, patient]');
     delete query?.password_hash;
     return query;
   }

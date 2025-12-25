@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, Boolean, TIMESTAMP, ForeignKey, func, Integer, Text, Table, Column
+from sqlalchemy import BigInteger, String, Boolean, TIMESTAMP, ForeignKey, func, Integer, Text, Table, Column, Numeric, Date
 
 class Base(DeclarativeBase):
     pass
@@ -39,6 +39,46 @@ class Role(Base):
         lazy="joined"
     )
 
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), unique=True, nullable=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    employee_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    license_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    area_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("areas.id", ondelete="SET NULL"), nullable=True)
+    base_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    session_rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    igss_percentage: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    hired_at: Mapped[object | None] = mapped_column(Date, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class Patient(Base):
+    __tablename__ = "patients"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), unique=True, nullable=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    dob: Mapped[object | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    marital_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    occupation: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    education_level: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    emergency_contact_relationship: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -50,8 +90,10 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("roles.id"), nullable=False)
 
-    # Relación con Role
+    # Relaciones
     role: Mapped["Role"] = relationship("Role", lazy="joined")
+    employee: Mapped["Employee"] = relationship("Employee", uselist=False, lazy="joined")
+    patient: Mapped["Patient"] = relationship("Patient", uselist=False, lazy="joined")
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 

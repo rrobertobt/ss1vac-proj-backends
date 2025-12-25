@@ -42,13 +42,17 @@ def require_permissions(*required_permissions: Permission) -> Callable:
             ...
     """
     async def permission_checker(user = Depends(get_current_user)):
+        # SUPER_ADMIN tiene acceso a todo
+        if user.role and user.role.name == 'SUPER_ADMIN':
+            return user
+        
         user_permissions = getattr(user, 'permissions', [])
         
         for perm in required_permissions:
             if perm.value not in user_permissions:
                 raise HTTPException(
                     status_code=403,
-                    detail="Permisos insuficientes"
+                    detail="No tienes permisos suficientes para realizar esta acción."
                 )
         
         return user

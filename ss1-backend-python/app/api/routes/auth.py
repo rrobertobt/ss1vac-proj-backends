@@ -62,18 +62,12 @@ async def verify_twofa(body: TwoFaVerifyBody, db: AsyncSession = Depends(get_db)
     return {"accessToken": token, "user": auth.public_user(user)}
 
 @router.get("/me")
-async def me(current_user=Depends(get_current_user)):
-    # current_user es un User SQLAlchemy
+async def me(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+    
     return {
-        "user": {
-            "id": current_user.id,
-            "email": current_user.email,
-            "username": current_user.username,
-            "roleId": current_user.role_id,
-            "roleName": current_user.role.name if current_user.role else None,
-            "roleLabel": current_user.role.label if current_user.role else None,
-            "twoFaEnabled": current_user.two_fa_enabled,
-        }
+        "user": auth.public_user(current_user)
     }
 
 @router.post("/2fa/enable/request")

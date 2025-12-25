@@ -435,7 +435,7 @@ INSERT INTO
   )
 VALUES
   (
-    'superadmin@psifirm.local',
+    'robertobau9091@gmail.com',
     'superadmin',
     '$2a$12$MOQvgXcUJyOqXgcuw/QG9.3qorXKb7ge.Bv0PnE3kGRofCTV9QRQK',
     (
@@ -448,5 +448,40 @@ VALUES
     ),
     TRUE
   ) ON CONFLICT (email) DO NOTHING;
+
+-- =============================
+-- SUPERADMIN EMPLOYEE
+-- =============================
+INSERT INTO
+  employees (
+    user_id,
+    first_name,
+    last_name,
+    employee_type,
+    base_salary,
+    session_rate,
+    igss_percentage,
+    hired_at,
+    status
+  )
+VALUES
+  (
+    (
+      SELECT
+        id
+      FROM
+        users
+      WHERE
+        email = 'robertobau9091@gmail.com'
+    ),
+    'Super',
+    'Administrador',
+    'ADMIN_STAFF',
+    0.00,
+    0.00,
+    0.00,
+    CURRENT_DATE,
+    'ACTIVE'
+  ) ON CONFLICT (user_id) DO NOTHING;
 
 COMMIT;

@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.api.routes.auth import router as auth_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="PsiFirm API (Python)")
 
@@ -33,5 +34,13 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
             "statusCode": 400,
         },
     )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Ajusta esto según tus necesidades
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)

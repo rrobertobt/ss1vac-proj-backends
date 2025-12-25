@@ -1,5 +1,7 @@
 import { Model, RelationMappings, RelationMappingsThunk } from 'objection';
 import { RoleModel } from 'src/modules/roles/entities/role.entity';
+import { EmployeeModel } from 'src/modules/employees/entities/employee.entity';
+import { PatientModel } from 'src/modules/patients/entities/patient.entity';
 
 export class UserModel extends Model {
   static tableName = 'users';
@@ -20,8 +22,10 @@ export class UserModel extends Model {
   created_at: Date;
   updated_at: Date;
 
-  // Relación con Role
+  // Relaciones
   role?: RoleModel;
+  employee?: EmployeeModel;
+  patient?: PatientModel;
 
   static get relationMappings(): RelationMappings | RelationMappingsThunk {
     return {
@@ -31,6 +35,22 @@ export class UserModel extends Model {
         join: {
           from: 'users.role_id',
           to: 'roles.id',
+        },
+      },
+      employee: {
+        relation: Model.HasOneRelation,
+        modelClass: EmployeeModel,
+        join: {
+          from: 'users.id',
+          to: 'employees.user_id',
+        },
+      },
+      patient: {
+        relation: Model.HasOneRelation,
+        modelClass: PatientModel,
+        join: {
+          from: 'users.id',
+          to: 'patients.user_id',
         },
       },
     };

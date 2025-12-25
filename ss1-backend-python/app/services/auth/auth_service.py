@@ -45,6 +45,23 @@ class AuthService:
             "roleName": user.role.name if user.role else None,
             "roleLabel": user.role.label if user.role else None,
             "twoFaEnabled": user.two_fa_enabled,
+            "employee": {
+                "id": user.employee.id,
+                "firstName": user.employee.first_name,
+                "lastName": user.employee.last_name,
+                "employeeType": user.employee.employee_type,
+                "licenseNumber": user.employee.license_number,
+                "status": user.employee.status,
+            } if user.employee else None,
+            "patient": {
+                "id": user.patient.id,
+                "firstName": user.patient.first_name,
+                "lastName": user.patient.last_name,
+                "dob": user.patient.dob.isoformat() if user.patient.dob else None,
+                "phone": user.patient.phone,
+                "email": user.patient.email,
+                "status": user.patient.status,
+            } if user.patient else None,
         }
 
     async def update_last_login(self, user_id: int):

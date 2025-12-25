@@ -67,6 +67,27 @@ export class AuthService {
       roleName: user.role?.name ?? null,
       roleLabel: user.role?.label ?? null,
       twoFaEnabled: user.two_fa_enabled,
+      employee: user.employee
+        ? {
+            id: user.employee.id,
+            firstName: user.employee.first_name,
+            lastName: user.employee.last_name,
+            employeeType: user.employee.employee_type,
+            licenseNumber: user.employee.license_number,
+            status: user.employee.status,
+          }
+        : null,
+      patient: user.patient
+        ? {
+            id: user.patient.id,
+            firstName: user.patient.first_name,
+            lastName: user.patient.last_name,
+            dob: user.patient.dob,
+            phone: user.patient.phone,
+            email: user.patient.email,
+            status: user.patient.status,
+          }
+        : null,
     };
   }
 
