@@ -37,6 +37,9 @@ class AuthService:
         )
 
     def public_user(self, user):
+        # Extraer códigos de permisos del rol
+        permissions = [p.code for p in user.role.permissions] if user.role and user.role.permissions else []
+
         return {
             "id": user.id,
             "email": user.email,
@@ -45,6 +48,7 @@ class AuthService:
             "roleName": user.role.name if user.role else None,
             "roleLabel": user.role.label if user.role else None,
             "twoFaEnabled": user.two_fa_enabled,
+            "permissions": permissions,
             "employee": {
                 "id": user.employee.id,
                 "firstName": user.employee.first_name,

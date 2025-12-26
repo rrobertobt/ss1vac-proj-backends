@@ -5,11 +5,12 @@ import * as dotenv from 'dotenv';
 import { UserModel } from 'src/modules/users/entities/user.entity';
 import { EmployeeModel } from 'src/modules/employees/entities/employee.entity';
 import { PatientModel } from 'src/modules/patients/entities/patient.entity';
+import { RoleModel } from 'src/modules/roles/entities/role.entity';
 
 dotenv.config();
 
 // Insert database models here
-const models = [UserModel, EmployeeModel, PatientModel];
+const models = [UserModel, EmployeeModel, PatientModel, RoleModel];
 
 const modelProviders = models.map((model) => {
   return {

@@ -47,10 +47,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JwtAccessPayload): Promise<JwtStrategyRetrun> {
     // Asegurar que sub sea un número (puede venir como string desde Python)
-    const userId = typeof payload.sub === 'number' ? payload.sub : parseInt(payload.sub as any, 10);
-    
+    const userId =
+      typeof payload.sub === 'number'
+        ? payload.sub
+        : parseInt(payload.sub as any, 10);
+
     const user = await this.usersService.findById(userId);
-    console.log('JWT validate found user:', user);
     if (!user || !user.is_active)
       throw new UnauthorizedException('Token inválido');
 

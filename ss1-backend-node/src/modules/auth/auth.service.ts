@@ -15,9 +15,9 @@ interface TwoFaJwtPayload {
 }
 
 interface PartialUserUpdate {
-  last_login_at?: string;
+  last_login_at?: Date | null;
   two_fa_secret?: string | null;
-  two_fa_expires_at?: string | null;
+  two_fa_expires_at?: Date | null;
   two_fa_attempts?: number;
   two_fa_enabled?: boolean;
   password_reset_token?: string | null;
@@ -52,13 +52,15 @@ export class AuthService {
       username: user.username,
       roleId: user.role_id,
     };
-    console.log('Issuing access token with payload:', payload);
 
     // "expira en bastante tiempo": configúralo por env, ej: 7d, 30d, etc.
     return this.jwt.signAsync(payload);
   }
 
   publicUser(user: UserModel) {
+    // Extraer códigos de permisos del rol
+    const permissions = user.role?.permissions?.map((p) => p.code) ?? [];
+
     return {
       id: user.id,
       email: user.email,
@@ -67,6 +69,7 @@ export class AuthService {
       roleName: user.role?.name ?? null,
       roleLabel: user.role?.label ?? null,
       twoFaEnabled: user.two_fa_enabled,
+      permissions,
       employee: user.employee
         ? {
             id: user.employee.id,
@@ -93,7 +96,7 @@ export class AuthService {
 
   async updateLastLogin(userId: number) {
     await this.usersService.update(userId, {
-      last_login_at: new Date().toISOString(),
+      last_login_at: new Date(),
     });
   }
 
@@ -110,7 +113,7 @@ export class AuthService {
 
     const updateData: PartialUserUpdate = {
       two_fa_secret: codeHash,
-      two_fa_expires_at: expires.toISOString(),
+      two_fa_expires_at: expires,
       two_fa_attempts: 0,
     };
 
