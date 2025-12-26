@@ -336,4 +336,34 @@ export class AuthService {
 
     return { ok: true };
   }
+
+  // --- Change Password (usuario autenticado) ---
+  async changePassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ ok: true } | { ok: false; reason: string }> {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.is_active)
+      return { ok: false, reason: 'Usuario inválido' };
+
+    // Verificar que la contraseña actual sea correcta
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password_hash ?? '',
+    );
+    if (!isCurrentPasswordValid)
+      return { ok: false, reason: 'Contraseña actual incorrecta' };
+
+    // Hash de la nueva contraseña
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar contraseña
+    const updateData: PartialUserUpdate = {
+      password_hash: passwordHash,
+    };
+    await this.usersService.update(user.id, updateData);
+
+    return { ok: true };
+  }
 }

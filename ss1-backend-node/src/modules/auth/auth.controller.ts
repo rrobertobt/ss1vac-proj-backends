@@ -14,6 +14,7 @@ import { JwtAuthGuard } from 'src/core/auth/guards/jwt-auth.guard';
 import { TwoFaVerifyDto } from './dto/twofa-verify.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserModel } from '../users/entities/user.entity';
 
 interface JwtUser {
@@ -191,5 +192,24 @@ export class AuthController {
     );
     if (!result.ok) throw new UnauthorizedException(result.reason);
     return { message: 'Contraseña actualizada exitosamente' };
+  }
+
+  /**
+   * Cambiar contraseña (usuario autenticado)
+   * Body: { currentPassword, newPassword }
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(
+    @Req() req: JwtAuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    const result = await this.authService.changePassword(
+      req.user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+    if (!result.ok) throw new UnauthorizedException(result.reason);
+    return { message: 'Contraseña cambiada exitosamente' };
   }
 }

@@ -219,3 +219,24 @@ class AuthService:
         )
 
         return {"ok": True}
+
+    async def change_password(self, user_id: int, current_password: str, new_password: str):
+        """Cambia la contraseña de un usuario autenticado"""
+        user = await self.users.find_by_id(user_id)
+        if not user or not user.is_active:
+            return {"ok": False, "reason": "Usuario inválido"}
+
+        # Verificar que la contraseña actual sea correcta
+        if not verify_hash(current_password, user.password_hash):
+            return {"ok": False, "reason": "Contraseña actual incorrecta"}
+
+        # Hash de la nueva contraseña
+        password_hash = hash_value(new_password)
+
+        # Actualizar contraseña
+        await self.users.patch_user(
+            user.id,
+            {"password_hash": password_hash},
+        )
+
+        return {"ok": True}

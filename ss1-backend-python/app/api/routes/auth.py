@@ -26,6 +26,10 @@ class ResetPasswordBody(BaseModel):
     code: str = Field(min_length=6, max_length=6)
     newPassword: str = Field(..., min_length=8)
 
+class ChangePasswordBody(BaseModel):
+    currentPassword: str = Field(..., min_length=1)
+    newPassword: str = Field(..., min_length=8)
+
 @router.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -123,3 +127,13 @@ async def reset_password(body: ResetPasswordBody, db: AsyncSession = Depends(get
     if not result["ok"]:
         raise HTTPException(status_code=401, detail=result["reason"])
     return {"message": "Contraseña actualizada exitosamente"}
+
+@router.post("/change-password")
+async def change_password(body: ChangePasswordBody, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+
+    result = await auth.change_password(current_user.id, body.currentPassword, body.newPassword)
+    if not result["ok"]:
+        raise HTTPException(status_code=401, detail=result["reason"])
+    return {"message": "Contraseña cambiada exitosamente"}
