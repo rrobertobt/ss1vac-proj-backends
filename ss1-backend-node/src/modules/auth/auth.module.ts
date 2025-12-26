@@ -15,7 +15,8 @@ import { MailService } from '../mail/mailtrap.service';
       global: true,
       secret: process.env.JWT_ACCESS_SECRET,
       signOptions: {
-        expiresIn: parseInt(process.env.TOKEN_EXPIRATION ?? '24h'),
+        // expiresIn: parseInt(process.env.TOKEN_EXPIRATION ?? '24h'),
+        expiresIn: '360h',
       },
     }),
   ],
