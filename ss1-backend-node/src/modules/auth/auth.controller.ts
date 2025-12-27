@@ -21,10 +21,10 @@ interface JwtUser {
   id: number;
   email: string;
   username: string;
-  roleId: number;
-  roleName: string | null;
-  roleLabel: string | null;
-  twoFaEnabled: boolean;
+  role_id: number;
+  role_name: string | null;
+  role_label: string | null;
+  two_fa_enabled: boolean;
   permissions: string[];
 }
 

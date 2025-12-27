@@ -9,7 +9,7 @@ export interface JwtAccessPayload {
   sub: number;
   email: string;
   username?: string;
-  roleId: number;
+  role_id: number;
   permissions?: string[];
   iat?: number;
   exp?: number;
@@ -19,10 +19,10 @@ export interface JwtStrategyRetrun {
   id: number;
   email: string;
   username: string;
-  roleId: number;
-  roleName: string | null;
-  roleLabel: string | null;
-  twoFaEnabled: boolean;
+  role_id: number;
+  role_name: string | null;
+  role_label: string | null;
+  two_fa_enabled: boolean;
   permissions: string[];
   patient?: PatientModel;
   employee?: EmployeeModel;
@@ -64,10 +64,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       id: user.id,
       email: user.email,
       username: user.username,
-      roleId: user.role_id,
-      roleName: user.role?.name ?? null,
-      roleLabel: user.role?.label ?? null,
-      twoFaEnabled: user.two_fa_enabled,
+      role_id: user.role_id,
+      role_name: user.role?.name ?? null,
+      role_label: user.role?.label ?? null,
+      two_fa_enabled: user.two_fa_enabled,
       permissions,
       patient: user.patient,
       employee: user.employee,

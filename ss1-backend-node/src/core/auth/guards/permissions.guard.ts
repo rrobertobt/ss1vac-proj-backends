@@ -27,7 +27,7 @@ export class PermissionsGuard implements CanActivate {
     }>();
     const user: JwtStrategyRetrun = request.user; // Obtenido desde el AuthGuard
 
-    if (user.roleName === 'SUPER_ADMIN') {
+    if (user.role_name === 'SUPER_ADMIN') {
       return true;
     }
 

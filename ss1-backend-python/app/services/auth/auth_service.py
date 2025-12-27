@@ -33,7 +33,7 @@ class AuthService:
             subject=str(user.id),
             secret=settings.JWT_ACCESS_SECRET,
             expires_in=settings.JWT_ACCESS_EXPIRES_IN,
-            extra={"email": user.email, "username": user.username, "roleId": user.role_id},
+            extra={"email": user.email, "username": user.username, "role_id": user.role_id},
         )
 
     def public_user(self, user):
@@ -44,28 +44,13 @@ class AuthService:
             "id": user.id,
             "email": user.email,
             "username": user.username,
-            "roleId": user.role_id,
-            "roleName": user.role.name if user.role else None,
-            "roleLabel": user.role.label if user.role else None,
-            "twoFaEnabled": user.two_fa_enabled,
+            "role_id": user.role_id,
+            "role_name": user.role.name if user.role else None,
+            "role_label": user.role.label if user.role else None,
+            "two_fa_enabled": user.two_fa_enabled,
             "permissions": permissions,
-            "employee": {
-                "id": user.employee.id,
-                "firstName": user.employee.first_name,
-                "lastName": user.employee.last_name,
-                "employeeType": user.employee.employee_type,
-                "licenseNumber": user.employee.license_number,
-                "status": user.employee.status,
-            } if user.employee else None,
-            "patient": {
-                "id": user.patient.id,
-                "firstName": user.patient.first_name,
-                "lastName": user.patient.last_name,
-                "dob": user.patient.dob.isoformat() if user.patient.dob else None,
-                "phone": user.patient.phone,
-                "email": user.patient.email,
-                "status": user.patient.status,
-            } if user.patient else None,
+            "employee": user.employee if user.employee else None,
+            "patient": user.patient if user.patient else None,
         }
 
     async def update_last_login(self, user_id: int):

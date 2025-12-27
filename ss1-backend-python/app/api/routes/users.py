@@ -2,11 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import math
+import secrets
+import string
 
 from app.api.deps import get_db, require_permissions
 from app.core.permissions import Permission
-from app.core.security import hash_password
+from app.core.security import hash_value
 from app.db.repositories.users_repo import UsersRepo
+from app.services.mail_mailtrap import MailService
 from app.api.routes.users_schemas import (
     UserCreate,
     UserUpdate,
@@ -94,14 +97,39 @@ async def create_user(
         if existing_username:
             raise HTTPException(status_code=409, detail="El username ya está registrado")
 
-    # Hashear la contraseña
-    hashed_password = hash_password(user_data.password)
+    # Generar contraseña aleatoria si no se proporciona
+    generated_password = user_data.password or generate_password()
+    hashed_password = hash_value(generated_password)
 
     # Crear usuario
     user_dict = user_data.model_dump(exclude={"password"})
     user_dict["password_hash"] = hashed_password
 
     user = await users_repo.create(user_dict)
+
+    # Enviar correo con la contraseña generada
+    try:
+        mail_service = MailService()
+        mail_service.send_text_email(
+            to=user_data.email,
+            subject="Bienvenido a PsiFirm - Credenciales de Acceso",
+            text=f"""Hola,
+
+Tu cuenta ha sido creada exitosamente en PsiFirm.
+
+Tus credenciales de acceso son:
+Email: {user_data.email}
+Contraseña: {generated_password}
+
+Por favor, cambia tu contraseña después de iniciar sesión por primera vez.
+
+Saludos,
+Equipo PsiFirm""",
+        )
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+        # No fallar la creación del usuario si falla el envío del correo
+
     return user
 
 
@@ -164,3 +192,12 @@ async def update_user_status(
     updated_user = await users_repo.patch_user(user_id, {"is_active": status_data.is_active})
 
     return updated_user
+
+
+def generate_password(length: int = 12) -> str:
+    """
+    Genera una contraseña aleatoria segura.
+    """
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    password = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return password

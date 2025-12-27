@@ -4,21 +4,41 @@ from datetime import datetime
 
 
 class UserBase(BaseModel):
-    email: EmailStr
-    username: Optional[str] = None
+    email: EmailStr = Field(..., description="Email del usuario")
+    username: Optional[str] = Field(
+        None, min_length=3, max_length=100, description="Nombre de usuario"
+    )
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
-    role_id: int
-    is_active: Optional[bool] = True
+    password: Optional[str] = Field(
+        None, min_length=8, max_length=100, description="Contraseña del usuario"
+    )
+    role_id: int = Field(..., gt=0, description="ID del rol")
+    is_active: Optional[bool] = Field(True, description="Estado activo/inactivo")
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("El username no puede estar vacío")
+        return v.strip() if v else None
 
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    username: Optional[str] = None
-    role_id: Optional[int] = None
-    is_active: Optional[bool] = None
+    email: Optional[EmailStr] = Field(None, description="Email del usuario")
+    username: Optional[str] = Field(
+        None, min_length=3, max_length=100, description="Nombre de usuario"
+    )
+    role_id: Optional[int] = Field(None, gt=0, description="ID del rol")
+    is_active: Optional[bool] = Field(None, description="Estado activo/inactivo")
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("El username no puede estar vacío")
+        return v.strip() if v else None
 
 
 class UserStatusUpdate(BaseModel):

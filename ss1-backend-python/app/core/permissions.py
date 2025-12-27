@@ -11,6 +11,11 @@ class Permission(str, Enum):
     CREATE_USERS = "CREATE_USERS"
     EDIT_USERS = "EDIT_USERS"
 
+    # Employees Management
+    CREATE_EMPLOYEES = "CREATE_EMPLOYEES"
+    EDIT_EMPLOYEES = "EDIT_EMPLOYEES"
+    VIEW_EMPLOYEES = "VIEW_EMPLOYEES"
+
     # Patients / Clinical Records
     VIEW_PATIENTS = "VIEW_PATIENTS"
     CREATE_PATIENTS = "CREATE_PATIENTS"

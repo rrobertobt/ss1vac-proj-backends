@@ -1,4 +1,5 @@
-import { Model } from 'objection';
+import { Model, RelationMappings, RelationMappingsThunk } from 'objection';
+import { UserModel } from 'src/modules/users/entities/user.entity';
 
 export class PatientModel extends Model {
   static tableName = 'patients';
@@ -21,4 +22,20 @@ export class PatientModel extends Model {
   status: string;
   created_at: Date;
   updated_at: Date;
+
+  // Relación
+  user?: UserModel;
+
+  static get relationMappings(): RelationMappings | RelationMappingsThunk {
+    return {
+      user: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: UserModel,
+        join: {
+          from: 'patients.user_id',
+          to: 'users.id',
+        },
+      },
+    };
+  }
 }
