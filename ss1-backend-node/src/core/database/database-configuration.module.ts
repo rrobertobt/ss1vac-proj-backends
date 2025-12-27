@@ -6,11 +6,24 @@ import { UserModel } from 'src/modules/users/entities/user.entity';
 import { EmployeeModel } from 'src/modules/employees/entities/employee.entity';
 import { PatientModel } from 'src/modules/patients/entities/patient.entity';
 import { RoleModel } from 'src/modules/roles/entities/role.entity';
+import { AreaModel } from 'src/modules/areas/entities/area.entity';
+import { SpecialtyModel } from 'src/modules/specialties/entities/specialty.entity';
+import { EmployeeSpecialtyModel } from 'src/modules/specialties/entities/employee-specialty.entity';
+import { ServiceModel } from 'src/modules/services/entities/service.entity';
 
 dotenv.config();
 
 // Insert database models here
-const models = [UserModel, EmployeeModel, PatientModel, RoleModel];
+const models = [
+  UserModel,
+  EmployeeModel,
+  PatientModel,
+  RoleModel,
+  AreaModel,
+  SpecialtyModel,
+  EmployeeSpecialtyModel,
+  ServiceModel,
+];
 
 const modelProviders = models.map((model) => {
   return {

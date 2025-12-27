@@ -16,6 +16,10 @@ class Permission(str, Enum):
     EDIT_EMPLOYEES = "EDIT_EMPLOYEES"
     VIEW_EMPLOYEES = "VIEW_EMPLOYEES"
 
+    # Areas & Specialties
+    MANAGE_AREAS = "MANAGE_AREAS"
+    MANAGE_SPECIALTIES = "MANAGE_SPECIALTIES"
+
     # Patients / Clinical Records
     VIEW_PATIENTS = "VIEW_PATIENTS"
     CREATE_PATIENTS = "CREATE_PATIENTS"

@@ -39,6 +39,32 @@ class Role(Base):
         lazy="joined"
     )
 
+class Area(Base):
+    __tablename__ = "areas"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class Specialty(Base):
+    __tablename__ = "specialties"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+# Tabla de asociación para employee_specialties
+employee_specialties = Table(
+    "employee_specialties",
+    Base.metadata,
+    Column("employee_id", BigInteger, ForeignKey("employees.id", ondelete="CASCADE"), primary_key=True),
+    Column("specialty_id", BigInteger, ForeignKey("specialties.id", ondelete="CASCADE"), primary_key=True),
+)
+
 class Employee(Base):
     __tablename__ = "employees"
 
@@ -76,6 +102,19 @@ class Patient(Base):
     emergency_contact_relationship: Mapped[str | None] = mapped_column(String(80), nullable=True)
     emergency_contact_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class Service(Base):
+    __tablename__ = "services"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    area_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("areas.id", ondelete="SET NULL"), nullable=True)
+    default_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
