@@ -486,8 +486,102 @@ VALUES
     'ACTIVE'
   ) ON CONFLICT (user_id) DO NOTHING;
 
-COMMIT;
+INSERT INTO
+  areas (name, description)
+VALUES
+  (
+    'Salud Mental Adultos',
+    'Atención psicológica y psiquiátrica para pacientes adultos.'
+  ),
+  (
+    'Salud Mental Infantil y Adolescente',
+    'Evaluación y tratamiento psicológico para niños y adolescentes.'
+  ),
+  (
+    'Psiquiatría',
+    'Diagnóstico y tratamiento médico de trastornos mentales.'
+  ),
+  (
+    'Psicología Clínica',
+    'Evaluaciones psicológicas, terapia individual y grupal.'
+  ),
+  (
+    'Neuropsicología',
+    'Evaluación de funciones cognitivas y daño cerebral.'
+  ),
+  (
+    'Trabajo Social',
+    'Apoyo psicosocial, estudios socioeconómicos y acompañamiento familiar.'
+  ),
+  (
+    'Administración',
+    'Gestión administrativa, recepción y coordinación de citas.'
+  ),
+  (
+    'Soporte Técnico',
+    'Mantenimiento de sistemas, infraestructura tecnológica y soporte.'
+  ),
+  (
+    'Mantenimiento General',
+    'Mantenimiento de instalaciones físicas y servicios generales.'
+  ) ON CONFLICT (name) DO NOTHING;
 
+-- =========================================================
+-- ESPECIALIDADES CLÍNICAS
+-- =========================================================
+INSERT INTO
+  specialties (name, description)
+VALUES
+  (
+    'Psicología Clínica',
+    'Tratamiento terapéutico de trastornos emocionales y psicológicos.'
+  ),
+  (
+    'Psicoterapia Cognitivo-Conductual',
+    'Intervenciones basadas en la modificación de pensamientos y conductas.'
+  ),
+  (
+    'Psiquiatría General',
+    'Diagnóstico médico y tratamiento farmacológico de trastornos mentales.'
+  ),
+  (
+    'Psiquiatría Infantil',
+    'Atención psiquiátrica especializada en niños y adolescentes.'
+  ),
+  (
+    'Terapia de Pareja',
+    'Intervenciones terapéuticas para conflictos de pareja.'
+  ),
+  (
+    'Terapia Familiar',
+    'Tratamiento psicológico enfocado en dinámicas familiares.'
+  ),
+  (
+    'Evaluación Psicológica',
+    'Aplicación de pruebas psicológicas y elaboración de informes clínicos.'
+  ),
+  (
+    'Neuropsicología Clínica',
+    'Evaluación y rehabilitación de funciones cognitivas.'
+  ),
+  (
+    'Manejo de Ansiedad y Estrés',
+    'Tratamiento especializado para ansiedad, estrés y burnout.'
+  ),
+  (
+    'Trastornos del Estado de Ánimo',
+    'Atención a depresión, trastorno bipolar y alteraciones emocionales.'
+  ),
+  (
+    'Adicciones',
+    'Tratamiento psicológico y psiquiátrico de dependencias.'
+  ),
+  (
+    'Orientación Vocacional',
+    'Evaluación y acompañamiento para elección profesional.'
+  ) ON CONFLICT (name) DO NOTHING;
+
+COMMIT;
 
 -- =========================================================
 -- EXTRA SEEDS: +20 usuarios para probar paginación
@@ -498,123 +592,158 @@ BEGIN;
 
 -- 12 pacientes
 WITH new_users AS (
-  INSERT INTO users (email, username, password_hash, role_id, is_active)
+  INSERT INTO
+    users (
+      email,
+      username,
+      password_hash,
+      role_id,
+      is_active
+    )
   SELECT
-    'patient' || gs::text || '@example.com' AS email,
-    'patient' || gs::text                 AS username,
+    'patient' || gs :: text || '@example.com' AS email,
+    'patient' || gs :: text AS username,
     '$2a$12$MOQvgXcUJyOqXgcuw/QG9.3qorXKb7ge.Bv0PnE3kGRofCTV9QRQK' AS password_hash,
-    (SELECT id FROM roles WHERE name = 'PATIENT') AS role_id,
+    (
+      SELECT
+        id
+      FROM
+        roles
+      WHERE
+        name = 'PATIENT'
+    ) AS role_id,
     TRUE AS is_active
-  FROM generate_series(1, 12) gs
-  ON CONFLICT DO NOTHING
-  RETURNING id, email
+  FROM
+    generate_series(1, 12) gs ON CONFLICT DO NOTHING RETURNING id,
+    email
 )
-INSERT INTO patients (
-  user_id,
-  first_name,
-  last_name,
-  dob,
-  gender,
-  marital_status,
-  occupation,
-  education_level,
-  address,
-  phone,
-  email,
-  emergency_contact_name,
-  emergency_contact_relationship,
-  emergency_contact_phone,
-  status
-)
+INSERT INTO
+  patients (
+    user_id,
+    first_name,
+    last_name,
+    dob,
+    gender,
+    marital_status,
+    occupation,
+    education_level,
+    address,
+    phone,
+    email,
+    emergency_contact_name,
+    emergency_contact_relationship,
+    emergency_contact_phone,
+    status
+  )
 SELECT
   u.id AS user_id,
-  'Patient' || gs::text AS first_name,
-  'Test' || gs::text AS last_name,
+  'Patient' || gs :: text AS first_name,
+  'Test' || gs :: text AS last_name,
   DATE '1998-01-01' + (gs * 90) AS dob,
-  CASE WHEN gs % 2 = 0 THEN 'F' ELSE 'M' END AS gender,
-  CASE WHEN gs % 3 = 0 THEN 'MARRIED' ELSE 'SINGLE' END AS marital_status,
-  'Occupation ' || gs::text AS occupation,
+  CASE
+    WHEN gs % 2 = 0 THEN 'F'
+    ELSE 'M'
+  END AS gender,
+  CASE
+    WHEN gs % 3 = 0 THEN 'MARRIED'
+    ELSE 'SINGLE'
+  END AS marital_status,
+  'Occupation ' || gs :: text AS occupation,
   'High School' AS education_level,
-  'Zona ' || (gs % 12 + 1)::text || ', Quetzaltenango' AS address,
-  '+502 5555-' || LPAD((3000 + gs)::text, 4, '0') AS phone,
+  'Zona ' || (gs % 12 + 1) :: text || ', Quetzaltenango' AS address,
+  '+502 5555-' || LPAD((3000 + gs) :: text, 4, '0') AS phone,
   u.email AS email,
-  'Contacto ' || gs::text AS emergency_contact_name,
+  'Contacto ' || gs :: text AS emergency_contact_name,
   'FAMILY' AS emergency_contact_relationship,
-  '+502 4444-' || LPAD((4000 + gs)::text, 4, '0') AS emergency_contact_phone,
+  '+502 4444-' || LPAD((4000 + gs) :: text, 4, '0') AS emergency_contact_phone,
   'ACTIVE' AS status
-FROM new_users u
-JOIN generate_series(1, 12) gs
-  ON u.email = ('patient' || gs::text || '@example.com')
-ON CONFLICT (user_id) DO NOTHING;
+FROM
+  new_users u
+  JOIN generate_series(1, 12) gs ON u.email = ('patient' || gs :: text || '@example.com') ON CONFLICT (user_id) DO NOTHING;
 
 -- 8 empleados (roles y employee_type coherentes)
 WITH emp_seed AS (
   SELECT
     gs,
-    CASE (gs % 5)
+    CASE
+      (gs % 5)
       WHEN 0 THEN 'PSYCHOLOGIST'
       WHEN 1 THEN 'PSYCHIATRIST'
       WHEN 2 THEN 'TECHNICIAN'
       WHEN 3 THEN 'MAINTENANCE'
       ELSE 'ADMIN_STAFF'
     END AS role_name,
-    CASE (gs % 5)
+    CASE
+      (gs % 5)
       WHEN 0 THEN 'PSYCHOLOGIST'
       WHEN 1 THEN 'PSYCHIATRIST'
       WHEN 2 THEN 'TECHNICIAN'
       WHEN 3 THEN 'MAINTENANCE'
       ELSE 'ADMIN_STAFF'
     END AS employee_type
-  FROM generate_series(1, 8) gs
+  FROM
+    generate_series(1, 8) gs
 ),
 new_users AS (
-  INSERT INTO users (email, username, password_hash, role_id, is_active)
+  INSERT INTO
+    users (
+      email,
+      username,
+      password_hash,
+      role_id,
+      is_active
+    )
   SELECT
-    'employee' || e.gs::text || '@example.com' AS email,
-    'employee' || e.gs::text                 AS username,
+    'employee' || e.gs :: text || '@example.com' AS email,
+    'employee' || e.gs :: text AS username,
     '$2a$12$MOQvgXcUJyOqXgcuw/QG9.3qorXKb7ge.Bv0PnE3kGRofCTV9QRQK' AS password_hash,
-    (SELECT id FROM roles WHERE name = e.role_name) AS role_id,
+    (
+      SELECT
+        id
+      FROM
+        roles
+      WHERE
+        name = e.role_name
+    ) AS role_id,
     TRUE AS is_active
-  FROM emp_seed e
-  ON CONFLICT DO NOTHING
-  RETURNING id, email
+  FROM
+    emp_seed e ON CONFLICT DO NOTHING RETURNING id,
+    email
 )
-INSERT INTO employees (
-  user_id,
-  first_name,
-  last_name,
-  employee_type,
-  license_number,
-  area_id,
-  base_salary,
-  session_rate,
-  igss_percentage,
-  hired_at,
-  status
-)
+INSERT INTO
+  employees (
+    user_id,
+    first_name,
+    last_name,
+    employee_type,
+    license_number,
+    area_id,
+    base_salary,
+    session_rate,
+    igss_percentage,
+    hired_at,
+    status
+  )
 SELECT
   u.id AS user_id,
-  'Employee' || e.gs::text AS first_name,
-  'Test' || e.gs::text AS last_name,
+  'Employee' || e.gs :: text AS first_name,
+  'Test' || e.gs :: text AS last_name,
   e.employee_type,
   CASE
-    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST')
-      THEN 'LIC-' || LPAD(e.gs::text, 5, '0')
+    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST') THEN 'LIC-' || LPAD(e.gs :: text, 5, '0')
     ELSE NULL
   END AS license_number,
   NULL AS area_id,
-  (3500 + e.gs * 200)::numeric(12,2) AS base_salary,
+  (3500 + e.gs * 200) :: numeric(12, 2) AS base_salary,
   CASE
-    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST')
-      THEN (250 + e.gs * 15)::numeric(12,2)
-    ELSE 0::numeric(12,2)
+    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST') THEN (250 + e.gs * 15) :: numeric(12, 2)
+    ELSE 0 :: numeric(12, 2)
   END AS session_rate,
-  4.83::numeric(5,2) AS igss_percentage,
+  4.83 :: numeric(5, 2) AS igss_percentage,
   DATE '2023-01-01' + (e.gs * 20) AS hired_at,
   'ACTIVE' AS status
-FROM new_users u
-JOIN emp_seed e
-  ON u.email = ('employee' || e.gs::text || '@example.com')
-ON CONFLICT (user_id) DO NOTHING;
+FROM
+  new_users u
+  JOIN emp_seed e ON u.email = ('employee' || e.gs :: text || '@example.com') ON CONFLICT (user_id) DO NOTHING;
 
 COMMIT;

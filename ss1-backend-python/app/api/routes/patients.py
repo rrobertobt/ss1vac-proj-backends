@@ -91,6 +91,10 @@ Equipo PsiFirm""",
             except Exception as e:
                 print(f"Error al enviar correo: {e}")
 
+        except HTTPException:
+            # Re-lanzar HTTPExceptions para que mantengan su código de estado
+            await db.rollback()
+            raise
         except Exception as e:
             await db.rollback()
             raise HTTPException(status_code=500, detail=f"Error al crear usuario: {str(e)}")
@@ -118,6 +122,10 @@ Equipo PsiFirm""",
 
         return patient
 
+    except HTTPException:
+        # Re-lanzar HTTPExceptions para que mantengan su código de estado
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al crear paciente: {str(e)}")

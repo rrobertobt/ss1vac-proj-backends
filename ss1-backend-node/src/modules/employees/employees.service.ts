@@ -6,6 +6,7 @@ import { MailService } from '../mail/mailtrap.service';
 import { UserModel } from '../users/entities/user.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { EmployeeModel } from './entities/employee.entity';
+import { EmployeeAvailabilityModel } from './entities/employee-availability.entity';
 
 @Injectable()
 export class EmployeesService {
@@ -13,6 +14,8 @@ export class EmployeesService {
     @Inject(EmployeeModel.name)
     private employeeModel: ModelClass<EmployeeModel>,
     @Inject(UserModel.name) private userModel: ModelClass<UserModel>,
+    @Inject(EmployeeAvailabilityModel.name)
+    private employeeAvailabilityModel: ModelClass<EmployeeAvailabilityModel>,
     private readonly mailService: MailService,
   ) {}
 
@@ -73,6 +76,106 @@ export class EmployeesService {
         status: 'ACTIVE',
       });
 
+      // Asignar especialidades si se proporcionaron
+      if (
+        createEmployeeDto.specialty_ids &&
+        createEmployeeDto.specialty_ids.length > 0
+      ) {
+        const specialtyRecords = createEmployeeDto.specialty_ids.map(
+          (specialtyId) => ({
+            employee_id: employee.id,
+            specialty_id: specialtyId,
+          }),
+        );
+
+        await this.employeeAvailabilityModel
+          .knex()
+          .raw(
+            'INSERT INTO employee_specialties (employee_id, specialty_id) VALUES ' +
+              specialtyRecords.map(() => '(?, ?)').join(', '),
+            specialtyRecords.flatMap((r) => [r.employee_id, r.specialty_id]),
+          )
+          .transacting(trx);
+      }
+
+      // Crear registros de disponibilidad si se proporcionaron
+      if (
+        createEmployeeDto.availability &&
+        createEmployeeDto.availability.length > 0
+      ) {
+        const assignedSpecialties = createEmployeeDto.specialty_ids || [];
+
+        // Validación 1: Verificar que todos los specialty_ids en availability estén en specialty_ids
+        for (const avail of createEmployeeDto.availability) {
+          if (
+            avail.specialty_id &&
+            !assignedSpecialties.includes(avail.specialty_id)
+          ) {
+            throw new ConflictException(
+              `La especialidad ${avail.specialty_id} en availability no está asignada al empleado`,
+            );
+          }
+        }
+
+        // Validación 2: Verificar que specialty_ids usados en availability coincidan con los asignados
+        const availabilitySpecialtyIds = createEmployeeDto.availability
+          .filter((a) => a.specialty_id !== undefined)
+          .map((a) => a.specialty_id!);
+        const uniqueAvailSpecIds = [...new Set(availabilitySpecialtyIds)];
+
+        const missingSpecialties = assignedSpecialties.filter(
+          (specId) => !uniqueAvailSpecIds.includes(specId),
+        );
+
+        if (missingSpecialties.length > 0) {
+          throw new ConflictException(
+            `Las especialidades ${missingSpecialties.join(', ')} están asignadas pero no tienen horarios de disponibilidad`,
+          );
+        }
+
+        // Validación 3: Verificar que no haya traslapes de horarios
+        for (let i = 0; i < createEmployeeDto.availability.length; i++) {
+          const avail1 = createEmployeeDto.availability[i];
+          const start1 = this.timeToMinutes(avail1.start_time);
+          const end1 = this.timeToMinutes(avail1.end_time);
+
+          for (let j = i + 1; j < createEmployeeDto.availability.length; j++) {
+            const avail2 = createEmployeeDto.availability[j];
+
+            // Solo verificar traslapes si es el mismo día y especialidad
+            if (
+              avail1.day_of_week === avail2.day_of_week &&
+              avail1.specialty_id === avail2.specialty_id
+            ) {
+              const start2 = this.timeToMinutes(avail2.start_time);
+              const end2 = this.timeToMinutes(avail2.end_time);
+
+              // Verificar traslape: (start1 < end2) && (start2 < end1)
+              if (start1 < end2 && start2 < end1) {
+                throw new ConflictException(
+                  `Conflicto de horarios: ${avail1.start_time}-${avail1.end_time} y ${avail2.start_time}-${avail2.end_time} se traslapan el día ${avail1.day_of_week} para la especialidad ${avail1.specialty_id || 'general'}`,
+                );
+              }
+            }
+          }
+        }
+
+        const availabilityRecords = createEmployeeDto.availability.map(
+          (avail) => ({
+            employee_id: employee.id,
+            day_of_week: avail.day_of_week,
+            start_time: avail.start_time,
+            end_time: avail.end_time,
+            specialty_id: avail.specialty_id ?? null,
+            is_active: true,
+          }),
+        );
+
+        await this.employeeAvailabilityModel
+          .query(trx)
+          .insert(availabilityRecords);
+      }
+
       await trx.commit();
 
       // Enviar correo con credenciales
@@ -111,5 +214,10 @@ export class EmployeesService {
     }
 
     return password;
+  }
+
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 }

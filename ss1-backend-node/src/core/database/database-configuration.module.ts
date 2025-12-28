@@ -10,6 +10,7 @@ import { AreaModel } from 'src/modules/areas/entities/area.entity';
 import { SpecialtyModel } from 'src/modules/specialties/entities/specialty.entity';
 import { EmployeeSpecialtyModel } from 'src/modules/specialties/entities/employee-specialty.entity';
 import { ServiceModel } from 'src/modules/services/entities/service.entity';
+import { EmployeeAvailabilityModel } from 'src/modules/employees/entities/employee-availability.entity';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ const models = [
   SpecialtyModel,
   EmployeeSpecialtyModel,
   ServiceModel,
+  EmployeeAvailabilityModel,
 ];
 
 const modelProviders = models.map((model) => {

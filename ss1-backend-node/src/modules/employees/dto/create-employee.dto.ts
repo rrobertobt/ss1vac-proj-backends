@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsDateString,
   IsEmail,
   IsIn,
@@ -11,7 +12,10 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { EmployeeAvailabilityDto } from './employee-availability.dto';
 
 const EMPLOYEE_TYPES = [
   'PSYCHOLOGIST',
@@ -99,4 +103,19 @@ export class CreateEmployeeDto {
   )
   @IsNotEmpty()
   hired_at: string;
+
+  @IsArray({ message: 'specialty_ids: Las especialidades deben ser un array' })
+  @IsInt({
+    each: true,
+    message: 'specialty_ids: Cada ID de especialidad debe ser un número entero',
+  })
+  @Min(1, { each: true, message: 'specialty_ids: Cada ID debe ser mayor a 0' })
+  @IsOptional()
+  specialty_ids?: number[];
+
+  @IsArray({ message: 'availability: La disponibilidad debe ser un array' })
+  @ValidateNested({ each: true })
+  @Type(() => EmployeeAvailabilityDto)
+  @IsOptional()
+  availability?: EmployeeAvailabilityDto[];
 }

@@ -64,7 +64,10 @@ async def delete_area(
     _current_user=Depends(require_permissions(Permission.MANAGE_AREAS)),
 ):
     """Eliminar un área (requiere permiso MANAGE_AREAS)"""
-    deleted = await AreasRepository.delete(db, area_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Área no encontrada")
-    return {"message": "Área eliminada exitosamente"}
+    try:
+        deleted = await AreasRepository.delete(db, area_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Área no encontrada")
+        return {"message": "Área eliminada exitosamente"}
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))

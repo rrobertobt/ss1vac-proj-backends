@@ -727,4 +727,35 @@ CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity, entity_id);
 
+-- =============================
+-- Agenda por especialidad (mínimo)
+-- Disponibilidad semanal del profesional
+-- =============================
+
+CREATE TABLE employee_availability (
+  id            SERIAL PRIMARY KEY,
+  employee_id   INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+
+  -- 0=Domingo ... 6=Sábado (o ajusta a tu convención)
+  day_of_week   SMALLINT NOT NULL,
+  start_time    TIME NOT NULL,
+  end_time      TIME NOT NULL,
+
+  -- Para "agenda por especialidad"
+  specialty_id  INTEGER REFERENCES specialties(id) ON DELETE SET NULL,
+
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT chk_day_of_week CHECK (day_of_week BETWEEN 0 AND 6),
+  CONSTRAINT chk_availability_time CHECK (end_time > start_time)
+);
+
+CREATE INDEX idx_employee_availability_employee ON employee_availability(employee_id);
+CREATE INDEX idx_employee_availability_specialty ON employee_availability(specialty_id);
+CREATE INDEX idx_employee_availability_day ON employee_availability(day_of_week);
+
+
+
 COMMIT;

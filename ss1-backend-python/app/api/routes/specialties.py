@@ -70,7 +70,10 @@ async def delete_specialty(
     _current_user=Depends(require_permissions(Permission.MANAGE_SPECIALTIES)),
 ):
     """Eliminar una especialidad (requiere permiso MANAGE_SPECIALTIES)"""
-    deleted = await SpecialtiesRepository.delete(db, specialty_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Especialidad no encontrada")
-    return {"message": "Especialidad eliminada exitosamente"}
+    try:
+        deleted = await SpecialtiesRepository.delete(db, specialty_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Especialidad no encontrada")
+        return {"message": "Especialidad eliminada exitosamente"}
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))

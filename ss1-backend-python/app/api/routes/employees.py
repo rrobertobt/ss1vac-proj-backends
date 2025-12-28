@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 import secrets
 import string
+from datetime import time
+from sqlalchemy import text
 
 from app.api.deps import get_db, require_permissions
 from app.core.permissions import Permission
@@ -10,6 +12,7 @@ from app.db.repositories.employees_repo import EmployeesRepo
 from app.db.repositories.users_repo import UsersRepo
 from app.services.mail_mailtrap import MailService
 from app.api.routes.employees_schemas import EmployeeCreate, EmployeeResponse
+from app.db.models import EmployeeAvailability
 
 router = APIRouter(prefix="/employees", tags=["employees"])
 
@@ -69,6 +72,83 @@ async def create_employee(
         }
         employee = await employees_repo.create(employee_dict)
 
+        # Asignar especialidades si se proporcionaron
+        if employee_data.specialty_ids:
+            for specialty_id in employee_data.specialty_ids:
+                await db.execute(
+                    text("INSERT INTO employee_specialties (employee_id, specialty_id) VALUES (:emp_id, :spec_id)"),
+                    {"emp_id": employee.id, "spec_id": specialty_id}
+                )
+
+        # Crear registros de disponibilidad si se proporcionaron
+        if employee_data.availability:
+            assigned_specialties = employee_data.specialty_ids or []
+            
+            # Solo validar si hay especialidades asignadas
+            if assigned_specialties:
+                # Validación 1: Verificar que todos los specialty_ids en availability estén en specialty_ids
+                for avail in employee_data.availability:
+                    if avail.specialty_id and avail.specialty_id not in assigned_specialties:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"La especialidad {avail.specialty_id} en availability no está asignada al empleado"
+                        )
+                
+                # Validación 2: Verificar que specialty_ids usados en availability coincidan con los asignados
+                availability_specialty_ids = [
+                    avail.specialty_id for avail in employee_data.availability 
+                    if avail.specialty_id is not None
+                ]
+                unique_avail_spec_ids = list(set(availability_specialty_ids))
+                
+                missing_specialties = [
+                    spec_id for spec_id in assigned_specialties 
+                    if spec_id not in unique_avail_spec_ids
+                ]
+                
+                if missing_specialties:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Las especialidades {', '.join(map(str, missing_specialties))} están asignadas pero no tienen horarios de disponibilidad"
+                    )
+            
+            # Validación 3: Verificar que no haya traslapes de horarios
+            for i, avail1 in enumerate(employee_data.availability):
+                start1 = time_to_minutes(avail1.start_time)
+                end1 = time_to_minutes(avail1.end_time)
+                
+                for avail2 in employee_data.availability[i+1:]:
+                    # Solo verificar traslapes si es el mismo día y especialidad
+                    if (avail1.day_of_week == avail2.day_of_week and 
+                        avail1.specialty_id == avail2.specialty_id):
+                        start2 = time_to_minutes(avail2.start_time)
+                        end2 = time_to_minutes(avail2.end_time)
+                        
+                        # Verificar traslape: (start1 < end2) && (start2 < end1)
+                        if start1 < end2 and start2 < end1:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Conflicto de horarios: {avail1.start_time}-{avail1.end_time} y {avail2.start_time}-{avail2.end_time} se traslapan el día {avail1.day_of_week} para la especialidad {avail1.specialty_id or 'general'}"
+                            )
+
+            for avail in employee_data.availability:
+                # Convertir string HH:mm a time object
+                start_parts = avail.start_time.split(":")
+                end_parts = avail.end_time.split(":")
+                
+                availability = EmployeeAvailability(
+                    employee_id=employee.id,
+                    day_of_week=avail.day_of_week,
+                    start_time=time(int(start_parts[0]), int(start_parts[1])),
+                    end_time=time(int(end_parts[0]), int(end_parts[1])),
+                    specialty_id=avail.specialty_id,
+                    is_active=True,
+                )
+                db.add(availability)
+            
+            await db.commit()
+            await db.refresh(employee)
+
         # Enviar correo con credenciales
         try:
             mail_service = MailService()
@@ -93,6 +173,10 @@ Equipo PsiFirm""",
 
         return employee
 
+    except HTTPException:
+        # Re-lanzar HTTPExceptions para que mantengan su código de estado
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al crear empleado: {str(e)}")
@@ -105,3 +189,11 @@ def generate_password(length: int = 12) -> str:
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     password = ''.join(secrets.choice(alphabet) for _ in range(length))
     return password
+
+
+def time_to_minutes(time_str: str) -> int:
+    """
+    Convierte una hora en formato HH:mm a minutos desde medianoche.
+    """
+    hours, minutes = map(int, time_str.split(":"))
+    return hours * 60 + minutes

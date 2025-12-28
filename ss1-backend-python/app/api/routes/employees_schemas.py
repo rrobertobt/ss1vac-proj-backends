@@ -1,7 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import date
 import re
+from app.api.routes.employee_availability_schemas import EmployeeAvailabilityDto
 
 
 class EmployeeCreate(BaseModel):
@@ -36,6 +37,21 @@ class EmployeeCreate(BaseModel):
         0, ge=0, le=100, description="Porcentaje IGSS (0-100)"
     )
     hired_at: Optional[date] = Field(None, description="Fecha de contratación")
+    specialty_ids: Optional[List[int]] = Field(
+        None, description="IDs de las especialidades del empleado"
+    )
+    availability: Optional[List[EmployeeAvailabilityDto]] = Field(
+        None, description="Horarios de disponibilidad del empleado"
+    )
+
+    @field_validator("specialty_ids")
+    @classmethod
+    def validate_specialty_ids(cls, v: Optional[List[int]]) -> Optional[List[int]]:
+        if v:
+            for spec_id in v:
+                if spec_id <= 0:
+                    raise ValueError("Cada ID de especialidad debe ser mayor a 0")
+        return v
 
     @field_validator("first_name", "last_name")
     @classmethod

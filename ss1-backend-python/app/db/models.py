@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import BigInteger, String, Boolean, TIMESTAMP, ForeignKey, func, Integer, Text, Table, Column, Numeric, Date
+from sqlalchemy import BigInteger, String, Boolean, TIMESTAMP, ForeignKey, func, Integer, Text, Table, Column, Numeric, Date, SmallInteger, Time
 
 class Base(DeclarativeBase):
     pass
@@ -114,6 +114,19 @@ class Service(Base):
     area_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("areas.id", ondelete="SET NULL"), nullable=True)
     default_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class EmployeeAvailability(Base):
+    __tablename__ = "employee_availability"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    employee_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False)
+    day_of_week: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    start_time: Mapped[object] = mapped_column(Time, nullable=False)
+    end_time: Mapped[object] = mapped_column(Time, nullable=False)
+    specialty_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("specialties.id", ondelete="SET NULL"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
