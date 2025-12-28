@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  psifirm-backend-python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: psifirm-backend-python
+    ports:
+      - "80:8001"
+    environment:
+      - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN}
+      - JWT_2FA_SECRET=${JWT_2FA_SECRET}
+      - JWT_2FA_EXPIRES_IN=${JWT_2FA_EXPIRES_IN}
+      - MAILTRAP_TOKEN=${MAILTRAP_TOKEN}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    restart: unless-stopped

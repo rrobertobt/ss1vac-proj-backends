@@ -1,0 +1,70 @@
+name: Build and Push to Amazon ECR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY_PYTHON: ${{ secrets.ECR_REPOSITORY_PYTHON }}
+  ECR_REPOSITORY_NODE: ${{ secrets.ECR_REPOSITORY_NODE }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Node Backend
+        working-directory: ./ss1-backend-node
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          TOKEN_EXPIRATION: ${{ secrets.TOKEN_EXPIRATION }}
+          MAILTRAP_TOKEN: ${{ secrets.MAILTRAP_TOKEN }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_FROM_NAME: ${{ secrets.MAIL_FROM_NAME }}
+        run: docker compose -f docker-compose-build.yml build
+
+      - name: Tag and Push Node Backend
+        run: |
+          docker tag psifirm-backend-node:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NODE:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NODE:latest
+
+      - name: Build Python Backend
+        working-directory: ./ss1-backend-python
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_ACCESS_EXPIRES_IN: ${{ secrets.JWT_ACCESS_EXPIRES_IN }}
+          JWT_2FA_SECRET: ${{ secrets.JWT_2FA_SECRET }}
+          JWT_2FA_EXPIRES_IN: ${{ secrets.JWT_2FA_EXPIRES_IN }}
+          MAILTRAP_TOKEN: ${{ secrets.MAILTRAP_TOKEN }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_FROM_NAME: ${{ secrets.MAIL_FROM_NAME }}
+        run: docker compose -f docker-compose-build.yml build
+
+      - name: Tag and Push Python Backend
+        run: |
+          docker tag psifirm-backend-python:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_PYTHON:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_PYTHON:latest

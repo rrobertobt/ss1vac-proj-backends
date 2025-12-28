@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  psifirm-backend-node:
+    image: 419392574943.dkr.ecr.us-east-1.amazonaws.com/psifirm-backend-node:latest
+    container_name: psifirm-backend-node
+    ports:
+      - "80:3001"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_PROVIDER=${DB_PROVIDER}
+      - DB_PASS=${DB_PASS}
+      - DB_USER=${DB_USER}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - TOKEN_EXPIRATION=${TOKEN_EXPIRATION}
+      - MAILTRAP_TOKEN=${MAILTRAP_TOKEN}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME}
+    restart: unless-stopped
