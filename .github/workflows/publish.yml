@@ -6,12 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPOSITORY_PYTHON: ${{ secrets.ECR_REPOSITORY_PYTHON }}
-  ECR_REPOSITORY_NODE: ${{ secrets.ECR_REPOSITORY_NODE }}
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -25,7 +19,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -48,8 +42,8 @@ jobs:
 
       - name: Tag and Push Node Backend
         run: |
-          docker tag psifirm-backend-node:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NODE:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NODE:latest
+          docker tag psifirm-backend-node:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NODE }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NODE }}:latest
 
       - name: Build Python Backend
         working-directory: ./ss1-backend-python
@@ -66,5 +60,5 @@ jobs:
 
       - name: Tag and Push Python Backend
         run: |
-          docker tag psifirm-backend-python:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_PYTHON:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_PYTHON:latest
+          docker tag psifirm-backend-python:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_PYTHON }}:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_PYTHON }}:latest
