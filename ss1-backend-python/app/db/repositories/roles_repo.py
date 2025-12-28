@@ -11,4 +11,4 @@ class RolesRepo:
         result = await self.db.execute(
             select(Role).order_by(Role.name.asc())
         )
-        return result.scalars().all()
+        return result.unique().scalars().all()

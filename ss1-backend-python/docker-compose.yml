@@ -7,7 +7,6 @@ services:
     ports:
       - "80:8001"
     environment:
-      - PORT=${PORT}
       - DATABASE_URL=${DATABASE_URL}
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN}
