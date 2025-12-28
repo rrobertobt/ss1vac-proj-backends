@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      tags:
+        - psifirm-backend-node:latest
     container_name: psifirm-backend-node
     ports:
       - "80:3001"
