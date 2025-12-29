@@ -99,7 +99,8 @@ class Employee(Base):
     availability: Mapped[list["EmployeeAvailability"]] = relationship(
         "EmployeeAvailability",
         lazy="joined",
-        foreign_keys="EmployeeAvailability.employee_id"
+        foreign_keys="EmployeeAvailability.employee_id",
+        overlaps="employee"
     )
 
 class Patient(Base):
@@ -208,7 +209,7 @@ class User(Base):
 
     # Relaciones
     role: Mapped["Role"] = relationship("Role", lazy="joined")
-    employee: Mapped["Employee"] = relationship("Employee", uselist=False, lazy="joined")
+    employee: Mapped["Employee"] = relationship("Employee", uselist=False, lazy="joined", overlaps="user")
     patient: Mapped["Patient"] = relationship("Patient", uselist=False, lazy="joined")
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -352,7 +353,7 @@ class InvoiceItem(Base):
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     # Relaciones
-    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined")
+    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined", overlaps="items")
     service: Mapped["Service"] = relationship("Service", lazy="joined")
     product: Mapped["Product"] = relationship("Product", lazy="joined")
 
@@ -369,7 +370,7 @@ class Payment(Base):
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     # Relaciones
-    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined")
+    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined", overlaps="payments")
     payment_method: Mapped["PaymentMethod"] = relationship("PaymentMethod", lazy="joined")
 
 
@@ -406,5 +407,5 @@ class PayrollRecord(Base):
 
     # Relaciones
     employee: Mapped["Employee"] = relationship("Employee", lazy="joined")
-    period: Mapped["PayrollPeriod"] = relationship("PayrollPeriod", lazy="joined")
+    period: Mapped["PayrollPeriod"] = relationship("PayrollPeriod", lazy="joined", overlaps="records")
 

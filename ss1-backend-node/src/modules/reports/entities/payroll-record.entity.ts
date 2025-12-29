@@ -15,14 +15,10 @@ export class PayrollPeriodModel extends Model {
   records?: any[];
 
   static get relationMappings(): RelationMappings | RelationMappingsThunk {
-    const {
-      PayrollRecordModel: PayrollRecordModelClass,
-    } = require('./payroll-record.entity');
-
     return {
       records: {
         relation: Model.HasManyRelation,
-        modelClass: PayrollRecordModelClass,
+        modelClass: PayrollRecordModel,
         join: {
           from: 'payroll_periods.id',
           to: 'payroll_records.period_id',

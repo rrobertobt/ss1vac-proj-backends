@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from datetime import date
 from typing import Optional
@@ -25,37 +25,37 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 @router.get("/revenue")
-def get_revenue_report(
+async def get_revenue_report(
     start_date: date = Query(...),
     end_date: date = Query(...),
     currency: str = Query("GTQ"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Reporte de ingresos por período
     Obtiene el total de ingresos basados en facturas y pagos realizados
     """
     # Obtener facturas en el período
-    invoices = (
-        db.query(Invoice)
+    invoices_result = await db.execute(
+        select(Invoice)
         .filter(
             Invoice.invoice_date.between(start_date, end_date),
             Invoice.currency == currency,
             Invoice.status.in_(["ISSUED", "PAID"]),
         )
-        .all()
     )
+    invoices = invoices_result.scalars().unique().all()
 
     # Obtener pagos realizados en el período
-    payments = (
-        db.query(Payment)
+    payments_result = await db.execute(
+        select(Payment)
         .join(Invoice)
         .filter(
             Payment.paid_at.between(start_date, end_date),
             Invoice.currency == currency,
         )
-        .all()
     )
+    payments = payments_result.scalars().unique().all()
 
     # Calcular totales
     total_invoiced = sum(float(inv.total_amount) for inv in invoices)
@@ -121,11 +121,11 @@ def get_revenue_report(
 
 
 @router.get("/payroll")
-def get_payroll_report(
+async def get_payroll_report(
     start_date: date = Query(...),
     end_date: date = Query(...),
     employee_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Reporte de pagos realizados a empleados
@@ -133,7 +133,7 @@ def get_payroll_report(
     """
     # Obtener registros de nómina en el período
     query = (
-        db.query(PayrollRecord)
+        select(PayrollRecord)
         .join(PayrollPeriod)
         .filter(
             or_(
@@ -146,7 +146,8 @@ def get_payroll_report(
     if employee_id:
         query = query.filter(PayrollRecord.employee_id == employee_id)
 
-    records = query.all()
+    records_result = await db.execute(query)
+    records = records_result.scalars().unique().all()
 
     # Calcular totales
     summary = {
@@ -206,25 +207,28 @@ def get_payroll_report(
 
 
 @router.get("/sales")
-def get_sales_history(
+async def get_sales_history(
     start_date: date = Query(...),
     end_date: date = Query(...),
     patient_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Historial de ventas
     Obtiene el detalle de todas las ventas (facturas con sus items)
     """
     # Obtener facturas en el período
-    query = db.query(Invoice).filter(
+    query = select(Invoice).filter(
         Invoice.invoice_date.between(start_date, end_date)
     )
 
     if patient_id:
         query = query.filter(Invoice.patient_id == patient_id)
 
-    invoices = query.order_by(Invoice.invoice_date.desc()).all()
+    query = query.order_by(Invoice.invoice_date.desc())
+    
+    invoices_result = await db.execute(query)
+    invoices = invoices_result.scalars().unique().all()
 
     # Calcular estadísticas
     total_sales = sum(float(inv.total_amount) for inv in invoices)
@@ -296,19 +300,19 @@ def get_sales_history(
 
 
 @router.get("/patients-per-specialty")
-def get_patients_per_specialty(
+async def get_patients_per_specialty(
     start_date: date = Query(...),
     end_date: date = Query(...),
     specialty_id: Optional[int] = Query(None),
     area_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Pacientes atendidos por especialidad (área)
     Obtiene estadísticas de pacientes atendidos agrupados por especialidad y área
     """
     # Obtener citas completadas en el período
-    query = db.query(Appointment).filter(
+    query = select(Appointment).filter(
         Appointment.start_datetime.between(start_date, end_date),
         Appointment.status == "COMPLETED",
     )
@@ -316,7 +320,8 @@ def get_patients_per_specialty(
     if specialty_id:
         query = query.filter(Appointment.specialty_id == specialty_id)
 
-    appointments = query.all()
+    appointments_result = await db.execute(query)
+    appointments = appointments_result.scalars().unique().all()
 
     # Filtrar por área si se especifica
     if area_id:

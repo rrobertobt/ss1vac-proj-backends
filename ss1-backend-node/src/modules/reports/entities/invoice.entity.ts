@@ -25,12 +25,6 @@ export class InvoiceModel extends Model {
   payments?: any[];
 
   static get relationMappings(): RelationMappings | RelationMappingsThunk {
-    const {
-      InvoiceItemModel: InvoiceItemModelClass,
-    } = require('./invoice-item.entity');
-
-    const { PaymentModel: PaymentModelClass } = require('./payment.entity');
-
     return {
       patient: {
         relation: Model.BelongsToOneRelation,
@@ -50,7 +44,7 @@ export class InvoiceModel extends Model {
       },
       items: {
         relation: Model.HasManyRelation,
-        modelClass: InvoiceItemModelClass,
+        modelClass: InvoiceItemModel,
         join: {
           from: 'invoices.id',
           to: 'invoice_items.invoice_id',
@@ -58,7 +52,7 @@ export class InvoiceModel extends Model {
       },
       payments: {
         relation: Model.HasManyRelation,
-        modelClass: PaymentModelClass,
+        modelClass: () => require('./payment.entity').PaymentModel,
         join: {
           from: 'invoices.id',
           to: 'payments.invoice_id',
@@ -87,12 +81,6 @@ export class InvoiceItemModel extends Model {
   product?: any;
 
   static get relationMappings(): RelationMappings | RelationMappingsThunk {
-    const {
-      ServiceModel: ServiceModelClass,
-    } = require('../../services/entities/service.entity');
-
-    const { ProductModel: ProductModelClass } = require('./product.entity');
-
     return {
       invoice: {
         relation: Model.BelongsToOneRelation,
@@ -104,7 +92,7 @@ export class InvoiceItemModel extends Model {
       },
       service: {
         relation: Model.BelongsToOneRelation,
-        modelClass: ServiceModelClass,
+        modelClass: () => require('../../services/entities/service.entity').ServiceModel,
         join: {
           from: 'invoice_items.service_id',
           to: 'services.id',
@@ -112,7 +100,7 @@ export class InvoiceItemModel extends Model {
       },
       product: {
         relation: Model.BelongsToOneRelation,
-        modelClass: ProductModelClass,
+        modelClass: () => require('./product.entity').ProductModel,
         join: {
           from: 'invoice_items.product_id',
           to: 'products.id',
