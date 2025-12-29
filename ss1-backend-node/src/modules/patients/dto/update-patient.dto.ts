@@ -1,10 +1,8 @@
 import {
   IsEmail,
-  IsNotEmpty,
   IsString,
   IsOptional,
   IsDateString,
-  MinLength,
   MaxLength,
   IsIn,
   Matches,
@@ -19,31 +17,7 @@ const MARITAL_STATUSES = [
   'DOMESTIC_PARTNERSHIP',
 ] as const;
 
-export class CreatePatientDto {
-  // Datos del usuario (opcional - puede no tener acceso al sistema)
-  @IsEmail({}, { message: 'El email debe ser válido' })
-  @IsOptional()
-  email?: string;
-
-  @IsString({ message: 'El username debe ser un texto' })
-  @MinLength(3, { message: 'El username debe tener al menos 3 caracteres' })
-  @MaxLength(100, { message: 'El username no puede exceder 100 caracteres' })
-  @IsOptional()
-  username?: string;
-
-  // Datos del paciente
-  @IsString({ message: 'El nombre debe ser un texto' })
-  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
-  @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
-  @IsNotEmpty({ message: 'El nombre es obligatorio' })
-  first_name: string;
-
-  @IsString({ message: 'El apellido debe ser un texto' })
-  @MinLength(2, { message: 'El apellido debe tener al menos 2 caracteres' })
-  @MaxLength(100, { message: 'El apellido no puede exceder 100 caracteres' })
-  @IsNotEmpty({ message: 'El apellido es obligatorio' })
-  last_name: string;
-
+export class UpdatePatientDto {
   @IsDateString(
     {},
     {
@@ -97,7 +71,7 @@ export class CreatePatientDto {
 
   @IsEmail({}, { message: 'El email del paciente debe ser válido' })
   @IsOptional()
-  patient_email?: string;
+  email?: string;
 
   @IsString({
     message: 'El nombre del contacto de emergencia debe ser un texto',

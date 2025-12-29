@@ -8,6 +8,7 @@ import { DatabaseTransactionModule } from './core/database/transaction/database-
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { AreasModule } from './modules/areas/areas.module';
@@ -25,6 +26,7 @@ import { SpecialtiesModule } from './modules/specialties/specialties.module';
     AuthModule,
     UsersModule,
     RolesModule,
+    PermissionsModule,
     EmployeesModule,
     PatientsModule,
     AreasModule,

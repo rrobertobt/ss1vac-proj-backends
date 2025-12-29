@@ -11,6 +11,7 @@ import { SpecialtyModel } from 'src/modules/specialties/entities/specialty.entit
 import { EmployeeSpecialtyModel } from 'src/modules/specialties/entities/employee-specialty.entity';
 import { ServiceModel } from 'src/modules/services/entities/service.entity';
 import { EmployeeAvailabilityModel } from 'src/modules/employees/entities/employee-availability.entity';
+import { PermissionModel } from 'src/modules/permissions/entities/permission.entity';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ const models = [
   EmployeeSpecialtyModel,
   ServiceModel,
   EmployeeAvailabilityModel,
+  PermissionModel,
 ];
 
 const modelProviders = models.map((model) => {
