@@ -676,89 +676,82 @@ FROM
   new_users u
   JOIN generate_series(1, 12) gs ON u.email = ('patient' || gs :: text || '@example.com') ON CONFLICT (user_id) DO NOTHING;
 
--- 8 empleados (roles y employee_type coherentes)
+-- =========================================================
+-- 8 empleados (roles coherentes, sin employee_type)
+-- =========================================================
 WITH emp_seed AS (
   SELECT
     gs,
-    CASE
-      (gs % 5)
+    CASE (gs % 5)
       WHEN 0 THEN 'PSYCHOLOGIST'
       WHEN 1 THEN 'PSYCHIATRIST'
       WHEN 2 THEN 'TECHNICIAN'
       WHEN 3 THEN 'MAINTENANCE'
       ELSE 'ADMIN_STAFF'
-    END AS role_name,
-    CASE
-      (gs % 5)
-      WHEN 0 THEN 'PSYCHOLOGIST'
-      WHEN 1 THEN 'PSYCHIATRIST'
-      WHEN 2 THEN 'TECHNICIAN'
-      WHEN 3 THEN 'MAINTENANCE'
-      ELSE 'ADMIN_STAFF'
-    END AS employee_type
-  FROM
-    generate_series(1, 8) gs
+    END AS role_name
+  FROM generate_series(1, 8) gs
 ),
 new_users AS (
-  INSERT INTO
-    users (
-      email,
-      username,
-      password_hash,
-      role_id,
-      is_active
-    )
+  INSERT INTO users (
+    email,
+    username,
+    password_hash,
+    role_id,
+    is_active
+  )
   SELECT
-    'employee' || e.gs :: text || '@example.com' AS email,
-    'employee' || e.gs :: text AS username,
+    'employee' || e.gs::text || '@example.com' AS email,
+    'employee' || e.gs::text AS username,
     '$2a$12$MOQvgXcUJyOqXgcuw/QG9.3qorXKb7ge.Bv0PnE3kGRofCTV9QRQK' AS password_hash,
     (
-      SELECT
-        id
-      FROM
-        roles
-      WHERE
-        name = e.role_name
+      SELECT id
+      FROM roles
+      WHERE name = e.role_name
     ) AS role_id,
     TRUE AS is_active
-  FROM
-    emp_seed e ON CONFLICT DO NOTHING RETURNING id,
-    email
+  FROM emp_seed e
+  ON CONFLICT DO NOTHING
+  RETURNING id, email
 )
-INSERT INTO
-  employees (
-    user_id,
-    first_name,
-    last_name,
-    employee_type,
-    license_number,
-    area_id,
-    base_salary,
-    session_rate,
-    igss_percentage,
-    hired_at,
-    status
-  )
+INSERT INTO employees (
+  user_id,
+  first_name,
+  last_name,
+  license_number,
+  area_id,
+  base_salary,
+  session_rate,
+  igss_percentage,
+  hired_at,
+  status
+)
 SELECT
   u.id AS user_id,
-  'Employee' || e.gs :: text AS first_name,
-  'Test' || e.gs :: text AS last_name,
-  e.employee_type,
+  'Employee' || e.gs::text AS first_name,
+  'Test' || e.gs::text AS last_name,
+
+  -- Licencia solo para perfiles clínicos (simulado por índice)
   CASE
-    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST') THEN 'LIC-' || LPAD(e.gs :: text, 5, '0')
+    WHEN e.gs % 3 = 0 THEN 'LIC-' || LPAD(e.gs::text, 5, '0')
     ELSE NULL
   END AS license_number,
+
   NULL AS area_id,
-  (3500 + e.gs * 200) :: numeric(12, 2) AS base_salary,
+  (3500 + e.gs * 200)::numeric(12,2) AS base_salary,
+
+  -- Session rate solo si tiene licencia
   CASE
-    WHEN e.employee_type IN ('PSYCHOLOGIST', 'PSYCHIATRIST') THEN (250 + e.gs * 15) :: numeric(12, 2)
-    ELSE 0 :: numeric(12, 2)
+    WHEN e.gs % 3 = 0 THEN (250 + e.gs * 15)::numeric(12,2)
+    ELSE 0::numeric(12,2)
   END AS session_rate,
-  4.83 :: numeric(5, 2) AS igss_percentage,
+
+  4.83::numeric(5,2) AS igss_percentage,
   DATE '2023-01-01' + (e.gs * 20) AS hired_at,
   'ACTIVE' AS status
-FROM
-  new_users u
-  JOIN emp_seed e ON u.email = ('employee' || e.gs :: text || '@example.com') ON CONFLICT (user_id) DO NOTHING;
+FROM new_users u
+JOIN emp_seed e
+  ON u.email = ('employee' || e.gs::text || '@example.com')
+ON CONFLICT (user_id) DO NOTHING;
+
 
 COMMIT;

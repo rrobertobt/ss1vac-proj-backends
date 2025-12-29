@@ -15,6 +15,7 @@ from app.api.routes.patient_tasks import router as patient_tasks_router
 from app.api.routes.confidential_notes import router as confidential_notes_router
 from app.api.routes.sessions import router as sessions_router
 from app.api.routes.reports import router as reports_router
+from app.api.routes.payroll import router as payroll_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="PsiFirm API (Python)")
@@ -105,4 +106,5 @@ app.include_router(patient_tasks_router)
 app.include_router(confidential_notes_router)
 app.include_router(sessions_router)
 app.include_router(reports_router)
+app.include_router(payroll_router)
 

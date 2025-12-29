@@ -102,6 +102,12 @@ class Employee(Base):
         foreign_keys="EmployeeAvailability.employee_id",
         overlaps="employee"
     )
+    
+    # Relación con PayrollRecord (one-to-many)
+    payroll_records: Mapped[list["PayrollRecord"]] = relationship(
+        "PayrollRecord",
+        back_populates="employee"
+    )
 
 class Patient(Base):
     __tablename__ = "patients"
@@ -385,7 +391,7 @@ class PayrollPeriod(Base):
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     # Relaciones
-    records: Mapped[list["PayrollRecord"]] = relationship("PayrollRecord", lazy="joined", foreign_keys="PayrollRecord.period_id")
+    records: Mapped[list["PayrollRecord"]] = relationship("PayrollRecord", back_populates="period", foreign_keys="PayrollRecord.period_id")
 
 
 class PayrollRecord(Base):
@@ -406,6 +412,6 @@ class PayrollRecord(Base):
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     # Relaciones
-    employee: Mapped["Employee"] = relationship("Employee", lazy="joined")
-    period: Mapped["PayrollPeriod"] = relationship("PayrollPeriod", lazy="joined", overlaps="records")
+    employee: Mapped["Employee"] = relationship("Employee", back_populates="payroll_records")
+    period: Mapped["PayrollPeriod"] = relationship("PayrollPeriod", back_populates="records")
 

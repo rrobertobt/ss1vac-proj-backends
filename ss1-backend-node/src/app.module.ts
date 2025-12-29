@@ -19,6 +19,7 @@ import { PatientTasksModule } from './modules/patient-tasks/patient-tasks.module
 import { ConfidentialNotesModule } from './modules/confidential-notes/confidential-notes.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     ConfidentialNotesModule,
     SessionsModule,
     ReportsModule,
+    PayrollModule,
   ],
   controllers: [AppController],
   providers: [AppService],
