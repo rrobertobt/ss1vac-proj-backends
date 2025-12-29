@@ -80,7 +80,7 @@ class UsersRepo:
         result = await self.db.execute(query)
         users = result.unique().scalars().all()
 
-        return user
+        return users
 
     async def update(self, user_id: int, user_data: dict):
         result = await self.db.execute(select(User).where(User.id == user_id))

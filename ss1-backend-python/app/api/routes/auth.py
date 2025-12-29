@@ -11,7 +11,7 @@ from app.api.deps import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 class LoginBody(BaseModel):
-    email_or_username: str
+    emailOrUsername: str
     password: str
 
 class TwoFaVerifyBody(BaseModel):
@@ -39,14 +39,14 @@ async def login(body: LoginBody, db: AsyncSession = Depends(get_db)):
     users = UsersRepo(db)
     auth = AuthService(users, MailService())
 
-    user = await auth.authenticate_user(body.email_or_username, body.password)
+    user = await auth.authenticate_user(body.emailOrUsername, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     if not user.two_fa_enabled:
         token = await auth.issue_access_token(user)
         await auth.update_last_login(user.id)
-        return {"access_token": token, "user": auth.public_user(user)}
+        return {"accessToken": token, "user": auth.public_user(user)}
 
     challenge_id = await auth.start_twofa(user.id, "login")
     return {"two_fa_required": True, "challenge_id": challenge_id}
