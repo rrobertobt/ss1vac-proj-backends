@@ -170,7 +170,7 @@ async def get_my_clinical_records(
     """
     
     # Verificar que el usuario tiene un patient_id
-    patient_id = getattr(current_user, 'patient_id', None) if hasattr(current_user, 'patient_id') else None
+    patient_id = current_user.patient.id if (hasattr(current_user, 'patient') and current_user.patient) else None
     
     if not patient_id:
         raise HTTPException(

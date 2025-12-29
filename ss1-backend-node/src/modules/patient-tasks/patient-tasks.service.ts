@@ -66,7 +66,7 @@ export class PatientTasksService {
       }
 
       // Obtener employee_id del usuario actual (si está disponible)
-      const assignedByEmployeeId = currentUser?.employee_id || null;
+      const assignedByEmployeeId = currentUser?.employee?.id || null;
 
       // Crear la tarea
       const task = await this.patientTaskModel.query(trx).insert({
@@ -142,7 +142,7 @@ export class PatientTasksService {
 
   async findByCurrentPatient(currentUser: any): Promise<PatientTaskModel[]> {
     // Obtener el patient_id del usuario actual
-    const patientId = currentUser?.patient_id;
+    const patientId = currentUser?.patient?.id;
 
     if (!patientId) {
       throw new BadRequestException(

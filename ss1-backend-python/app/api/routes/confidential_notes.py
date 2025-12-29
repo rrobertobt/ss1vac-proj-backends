@@ -46,7 +46,7 @@ async def create_confidential_note(
         )
     
     # Obtener employee_id del usuario actual (si está disponible)
-    author_employee_id = getattr(current_user, 'employee_id', None) if hasattr(current_user, 'employee_id') else None
+    author_employee_id = current_user.employee.id if (hasattr(current_user, 'employee') and current_user.employee) else None
     
     # Crear la nota confidencial
     new_note = ConfidentialNote(

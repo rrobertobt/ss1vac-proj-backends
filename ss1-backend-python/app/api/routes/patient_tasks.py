@@ -65,7 +65,7 @@ async def create_patient_task(
             )
     
     # Obtener employee_id del usuario actual (si está disponible)
-    assigned_by_employee_id = getattr(current_user, 'employee_id', None) if hasattr(current_user, 'employee_id') else None
+    assigned_by_employee_id = current_user.employee.id if (hasattr(current_user, 'employee') and current_user.employee) else None
     
     # Crear la tarea
     new_task = PatientTask(
@@ -128,7 +128,7 @@ async def list_my_tasks(
     """
     
     # Verificar que el usuario tiene un patient_id
-    patient_id = getattr(current_user, 'patient_id', None) if hasattr(current_user, 'patient_id') else None
+    patient_id = current_user.patient.id if (hasattr(current_user, 'patient') and current_user.patient) else None
     
     if not patient_id:
         raise HTTPException(

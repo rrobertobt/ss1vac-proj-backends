@@ -45,7 +45,7 @@ export class ConfidentialNotesService {
       }
 
       // Obtener employee_id del usuario actual (si está disponible)
-      const authorEmployeeId = currentUser?.employee_id || null;
+      const authorEmployeeId = currentUser?.employee.id || null;
 
       // Crear la nota confidencial
       const note = await this.confidentialNoteModel.query(trx).insert({

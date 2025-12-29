@@ -32,20 +32,19 @@ export class PatientTasksController {
     return this.patientTasksService.create(patientId, createDto, req.user);
   }
 
-  @Get('patients/:patientId/tasks')
-  @Permissions(Permission.VIEW_PATIENTS)
-  findByPatient(@Param('patientId', ParseIntPipe) patientId: number) {
-    return this.patientTasksService.findByPatient(patientId);
-  }
-
   @Get('patients/me/tasks')
   @UseGuards(JwtAuthGuard)
   findMyTasks(@Request() req) {
     return this.patientTasksService.findByCurrentPatient(req.user);
   }
 
+  @Get('patients/:patientId/tasks')
+  @Permissions(Permission.VIEW_PATIENTS)
+  findByPatient(@Param('patientId', ParseIntPipe) patientId: number) {
+    return this.patientTasksService.findByPatient(patientId);
+  }
+
   @Patch('patient-tasks/:taskId')
-  @Permissions(Permission.ASSIGN_PATIENT_TASKS)
   update(
     @Param('taskId', ParseIntPipe) taskId: number,
     @Body() updateDto: UpdatePatientTaskDto,

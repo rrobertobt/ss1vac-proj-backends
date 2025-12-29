@@ -282,7 +282,7 @@ export class ClinicalRecordsService {
 
   async findByCurrentPatient(currentUser: any): Promise<ClinicalRecordModel[]> {
     // Obtener el patient_id del usuario actual
-    const patientId = currentUser?.patient_id;
+    const patientId = currentUser?.patient?.id;
 
     if (!patientId) {
       throw new BadRequestException(

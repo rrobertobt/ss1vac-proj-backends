@@ -68,7 +68,7 @@ async def create_session(
     # Usar el professional_id del usuario actual si no se proporciona
     professional_id = session_data.professional_id
     if not professional_id:
-        professional_id = getattr(current_user, 'employee_id', None) if hasattr(current_user, 'employee_id') else None
+        professional_id = current_user.employee.id if (hasattr(current_user, 'employee') and current_user.employee) else None
     
     # Crear la sesión
     new_session = Session(
