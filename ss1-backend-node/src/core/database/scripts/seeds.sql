@@ -55,6 +55,20 @@ VALUES
     'ASSIGN_ROLE_PERMISSIONS',
     'Asignar/quitar permisos a roles'
   ),
+  -- Gestión de Usuarios
+  ('VIEW_USERS', 'Ver listado de usuarios'),
+  ('CREATE_USERS', 'Crear usuarios'),
+  ('EDIT_USERS', 'Editar usuarios'),
+  -- Gestión de Empleados
+  ('CREATE_EMPLOYEES', 'Crear empleados'),
+  ('EDIT_EMPLOYEES', 'Editar empleados'),
+  ('VIEW_EMPLOYEES', 'Ver listado de empleados'),
+  -- Áreas y Especialidades
+  ('MANAGE_AREAS', 'Gestionar áreas'),
+  (
+    'MANAGE_SPECIALTIES',
+    'Gestionar especialidades'
+  ),
   -- Pacientes / Historia clínica
   (
     'VIEW_PATIENTS',

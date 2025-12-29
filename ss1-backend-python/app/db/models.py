@@ -150,6 +150,30 @@ class EmployeeAvailability(Base):
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    # Relaciones
+    employee: Mapped["Employee"] = relationship("Employee", lazy="joined")
+    specialty: Mapped["Specialty"] = relationship("Specialty", lazy="joined")
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    professional_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    specialty_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("specialties.id", ondelete="SET NULL"), nullable=True)
+    appointment_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    start_datetime: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    end_datetime: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="SCHEDULED")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    professional: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[professional_id])
+    specialty: Mapped["Specialty"] = relationship("Specialty", lazy="joined")
+
 class User(Base):
     __tablename__ = "users"
 

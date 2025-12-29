@@ -9,6 +9,7 @@ from app.api.routes.employees import router as employees_router
 from app.api.routes.patients import router as patients_router
 from app.api.routes.areas import router as areas_router
 from app.api.routes.specialties import router as specialties_router
+from app.api.routes.appointments import router as appointments_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="PsiFirm API (Python)")
@@ -93,4 +94,5 @@ app.include_router(employees_router)
 app.include_router(patients_router)
 app.include_router(areas_router)
 app.include_router(specialties_router)
+app.include_router(appointments_router)
 
