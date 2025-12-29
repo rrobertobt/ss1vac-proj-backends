@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 from app.db.session import get_db
 from app.db.repositories.users_repo import UsersRepo
@@ -29,6 +30,22 @@ class ResetPasswordBody(BaseModel):
 class ChangePasswordBody(BaseModel):
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
+
+class UpdateProfileBody(BaseModel):
+    # Usuario (tabla users)
+    username: Optional[str] = Field(None, min_length=3, max_length=100)
+    
+    # Datos personales de paciente (solo aplicable si el usuario es paciente)
+    phone: Optional[str] = Field(None, max_length=50)
+    email: Optional[EmailStr] = Field(None, max_length=255)
+    address: Optional[str] = None
+    gender: Optional[str] = Field(None, max_length=20)
+    marital_status: Optional[str] = Field(None, max_length=30)
+    occupation: Optional[str] = Field(None, max_length=120)
+    education_level: Optional[str] = Field(None, max_length=120)
+    emergency_contact_name: Optional[str] = Field(None, max_length=150)
+    emergency_contact_relationship: Optional[str] = Field(None, max_length=80)
+    emergency_contact_phone: Optional[str] = Field(None, max_length=50)
 
 @router.get("/health")
 async def health_check():
@@ -72,6 +89,21 @@ async def me(current_user=Depends(get_current_user), db: AsyncSession = Depends(
     
     return {
         "user": auth.public_user(current_user)
+    }
+
+@router.patch("/me")
+async def update_profile(body: UpdateProfileBody, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Actualizar datos personales del perfil del usuario autenticado.
+    Permite actualizar username y datos personales (solo para pacientes).
+    No permite actualizar nombres (first_name, last_name).
+    """
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+    
+    updated_user = await auth.update_profile(current_user.id, body.model_dump(exclude_unset=True))
+    return {
+        "user": auth.public_user(updated_user)
     }
 
 @router.post("/2fa/enable/request")

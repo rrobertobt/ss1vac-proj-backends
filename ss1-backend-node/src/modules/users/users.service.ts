@@ -172,8 +172,8 @@ export class UsersService {
     return password;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const user = await this.userModel.query().findById(id);
+  async update(id: number, updateUserDto: UpdateUserDto, trx?: Transaction) {
+    const user = await this.userModel.query(trx).findById(id);
 
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -182,7 +182,7 @@ export class UsersService {
     // Verificar si el nuevo email ya existe
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingEmail = await this.userModel
-        .query()
+        .query(trx)
         .where('email', updateUserDto.email)
         .whereNot('id', id)
         .first();
@@ -195,7 +195,7 @@ export class UsersService {
     // Verificar si el nuevo username ya existe
     if (updateUserDto.username && updateUserDto.username !== user.username) {
       const existingUsername = await this.userModel
-        .query()
+        .query(trx)
         .where('username', updateUserDto.username)
         .whereNot('id', id)
         .first();
@@ -206,7 +206,7 @@ export class UsersService {
     }
 
     // Actualizar usuario
-    await this.userModel.query().patchAndFetchById(id, updateUserDto);
+    await this.userModel.query(trx).patchAndFetchById(id, updateUserDto);
 
     // Retornar usuario actualizado con relaciones
     return this.findById(id);
