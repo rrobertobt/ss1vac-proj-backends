@@ -80,7 +80,7 @@ class UsersRepo:
         result = await self.db.execute(query)
         users = result.unique().scalars().all()
 
-        return user
+        return users, total
 
     async def update(self, user_id: int, user_data: dict):
         result = await self.db.execute(select(User).where(User.id == user_id))
@@ -93,7 +93,7 @@ class UsersRepo:
 
         await self.db.commit()
         await self.db.refresh(user)
-        return users, total
+        return await self.find_by_id(user_id)
 
     async def create(self, user_data: dict) -> User:
         user = User(**user_data)

@@ -99,7 +99,14 @@ class Employee(Base):
     availability: Mapped[list["EmployeeAvailability"]] = relationship(
         "EmployeeAvailability",
         lazy="joined",
-        foreign_keys="EmployeeAvailability.employee_id"
+        foreign_keys="EmployeeAvailability.employee_id",
+        overlaps="employee"
+    )
+    
+    # Relación con PayrollRecord (one-to-many)
+    payroll_records: Mapped[list["PayrollRecord"]] = relationship(
+        "PayrollRecord",
+        back_populates="employee"
     )
 
 class Patient(Base):
@@ -123,6 +130,27 @@ class Patient(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+class ClinicalRecord(Base):
+    __tablename__ = "clinical_records"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    record_number: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
+    institution_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    service: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    opening_date: Mapped[object | None] = mapped_column(Date, nullable=True)
+    responsible_employee_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    responsible_license: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    referral_source: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    chief_complaint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    responsible_employee: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[responsible_employee_id])
 
 class Service(Base):
     __tablename__ = "services"
@@ -150,6 +178,30 @@ class EmployeeAvailability(Base):
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    # Relaciones
+    employee: Mapped["Employee"] = relationship("Employee", lazy="joined")
+    specialty: Mapped["Specialty"] = relationship("Specialty", lazy="joined")
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    professional_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    specialty_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("specialties.id", ondelete="SET NULL"), nullable=True)
+    appointment_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    start_datetime: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    end_datetime: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="SCHEDULED")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    professional: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[professional_id])
+    specialty: Mapped["Specialty"] = relationship("Specialty", lazy="joined")
+
 class User(Base):
     __tablename__ = "users"
 
@@ -163,7 +215,7 @@ class User(Base):
 
     # Relaciones
     role: Mapped["Role"] = relationship("Role", lazy="joined")
-    employee: Mapped["Employee"] = relationship("Employee", uselist=False, lazy="joined")
+    employee: Mapped["Employee"] = relationship("Employee", uselist=False, lazy="joined", overlaps="user")
     patient: Mapped["Patient"] = relationship("Patient", uselist=False, lazy="joined")
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -180,3 +232,186 @@ class User(Base):
 
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class PatientTask(Base):
+    __tablename__ = "patient_tasks"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    clinical_record_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("clinical_records.id", ondelete="SET NULL"), nullable=True)
+    assigned_by_employee_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_date: Mapped[object | None] = mapped_column(Date, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    clinical_record: Mapped["ClinicalRecord"] = relationship("ClinicalRecord", lazy="joined")
+    assigned_by: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[assigned_by_employee_id])
+
+
+class ConfidentialNote(Base):
+    __tablename__ = "confidential_notes"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    clinical_record_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("clinical_records.id", ondelete="CASCADE"), nullable=False)
+    author_employee_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    clinical_record: Mapped["ClinicalRecord"] = relationship("ClinicalRecord", lazy="joined")
+    author: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[author_employee_id])
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    clinical_record_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("clinical_records.id", ondelete="CASCADE"), nullable=False)
+    professional_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    session_datetime: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    session_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    attended: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    absence_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    topics: Mapped[str | None] = mapped_column(Text, nullable=True)
+    interventions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    patient_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assigned_tasks: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    next_appointment_datetime: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    digital_signature_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    appointment_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("appointments.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    clinical_record: Mapped["ClinicalRecord"] = relationship("ClinicalRecord", lazy="joined")
+    professional: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[professional_id])
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    sku: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    product_type: Mapped[str] = mapped_column(String(30), nullable=False, default="OTHER")
+    unit: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    cost_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    sale_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    min_stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    current_stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    invoice_number: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)
+    patient_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
+    created_by_employee_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="SET NULL"), nullable=True)
+    invoice_date: Mapped[object] = mapped_column(Date, nullable=False, server_default=func.current_date())
+    due_date: Mapped[object | None] = mapped_column(Date, nullable=True)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="GTQ")
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ISSUED")
+    pdf_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    patient: Mapped["Patient"] = relationship("Patient", lazy="joined")
+    created_by: Mapped["Employee"] = relationship("Employee", lazy="joined", foreign_keys=[created_by_employee_id])
+    items: Mapped[list["InvoiceItem"]] = relationship("InvoiceItem", lazy="joined", foreign_keys="InvoiceItem.invoice_id")
+    payments: Mapped[list["Payment"]] = relationship("Payment", lazy="joined", foreign_keys="Payment.invoice_id")
+
+
+class InvoiceItem(Base):
+    __tablename__ = "invoice_items"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    invoice_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False)
+    service_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("services.id", ondelete="SET NULL"), nullable=True)
+    product_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    quantity: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=1)
+    unit_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relaciones
+    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined", overlaps="items")
+    service: Mapped["Service"] = relationship("Service", lazy="joined")
+    product: Mapped["Product"] = relationship("Product", lazy="joined")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    invoice_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False)
+    payment_method_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    paid_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relaciones
+    invoice: Mapped["Invoice"] = relationship("Invoice", lazy="joined", overlaps="payments")
+    payment_method: Mapped["PaymentMethod"] = relationship("PaymentMethod", lazy="joined")
+
+
+class PayrollPeriod(Base):
+    __tablename__ = "payroll_periods"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    period_start: Mapped[object] = mapped_column(Date, nullable=False)
+    period_end: Mapped[object] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="OPEN")
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    records: Mapped[list["PayrollRecord"]] = relationship("PayrollRecord", back_populates="period", foreign_keys="PayrollRecord.period_id")
+
+
+class PayrollRecord(Base):
+    __tablename__ = "payroll_records"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    employee_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("employees.id", ondelete="RESTRICT"), nullable=False)
+    period_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("payroll_periods.id", ondelete="RESTRICT"), nullable=False)
+    base_salary_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    sessions_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sessions_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    bonuses_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    igss_deduction: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    other_deductions: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    total_pay: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    paid_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relaciones
+    employee: Mapped["Employee"] = relationship("Employee", back_populates="payroll_records")
+    period: Mapped["PayrollPeriod"] = relationship("PayrollPeriod", back_populates="records")
+

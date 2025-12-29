@@ -11,6 +11,11 @@ import { SpecialtyModel } from 'src/modules/specialties/entities/specialty.entit
 import { EmployeeSpecialtyModel } from 'src/modules/specialties/entities/employee-specialty.entity';
 import { ServiceModel } from 'src/modules/services/entities/service.entity';
 import { EmployeeAvailabilityModel } from 'src/modules/employees/entities/employee-availability.entity';
+import { PermissionModel } from 'src/modules/permissions/entities/permission.entity';
+import { ClinicalRecordModel } from 'src/modules/clinical-records/entities/clinical-record.entity';
+import { PatientTaskModel } from 'src/modules/patient-tasks/entities/patient-task.entity';
+import { ConfidentialNoteModel } from 'src/modules/confidential-notes/entities/confidential-note.entity';
+import { SessionModel } from 'src/modules/sessions/entities/session.entity';
 
 dotenv.config();
 
@@ -25,6 +30,11 @@ const models = [
   EmployeeSpecialtyModel,
   ServiceModel,
   EmployeeAvailabilityModel,
+  PermissionModel,
+  ClinicalRecordModel,
+  PatientTaskModel,
+  ConfidentialNoteModel,
+  SessionModel,
 ];
 
 const modelProviders = models.map((model) => {

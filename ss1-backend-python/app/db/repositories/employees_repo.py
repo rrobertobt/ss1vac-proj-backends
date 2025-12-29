@@ -30,7 +30,7 @@ class EmployeesRepo:
         # Base query
         query = (
             select(Employee)
-            .options(joinedload(Employee.user).joinedload('role'))
+            .options(joinedload(Employee.user).joinedload(User.role))
             .order_by(Employee.created_at.desc())
         )
 
@@ -65,7 +65,7 @@ class EmployeesRepo:
 
         # Ejecutar query
         result = await self.db.execute(query)
-        employees = list(result.scalars().all())
+        employees = list(result.scalars().unique().all())
 
         return {
             "data": employees,
@@ -81,14 +81,14 @@ class EmployeesRepo:
         result = await self.db.execute(
             select(Employee)
             .options(
-                joinedload(Employee.user).joinedload('role'),
+                joinedload(Employee.user).joinedload(User.role),
                 joinedload(Employee.area),
                 joinedload(Employee.specialties),
                 joinedload(Employee.availability)
             )
             .where(Employee.id == employee_id)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().unique().one_or_none()
 
     async def update(self, employee_id: int, employee_data: dict):
         result = await self.db.execute(

@@ -2,7 +2,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, Literal, List
 from datetime import date
 import re
-from app.api.routes.employee_availability_schemas import EmployeeAvailabilityDto
+from app.api.routes.employee_availability_schemas import (
+    EmployeeAvailabilityDto,
+    EmployeeAvailabilityResponse,
+)
+from app.api.routes.areas_schemas import AreaResponse
+from app.api.routes.specialties_schemas import SpecialtyResponse
+from app.api.routes.users_schemas import RoleInfo
 
 
 class EmployeeCreate(BaseModel):
@@ -65,6 +71,18 @@ class EmployeeCreate(BaseModel):
         return v
 
 
+class UserInfo(BaseModel):
+    id: int
+    email: EmailStr
+    username: Optional[str] = None
+    role_id: int
+    role: Optional[RoleInfo] = None
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
 class EmployeeResponse(BaseModel):
     id: int
     user_id: Optional[int] = None
@@ -77,6 +95,10 @@ class EmployeeResponse(BaseModel):
     igss_percentage: float
     hired_at: Optional[date] = None
     status: str
+    user: Optional[UserInfo] = None
+    area: Optional[AreaResponse] = None
+    specialties: Optional[List[SpecialtyResponse]] = None
+    availability: Optional[List[EmployeeAvailabilityResponse]] = None
 
     class Config:
         from_attributes = True

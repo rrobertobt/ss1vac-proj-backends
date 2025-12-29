@@ -44,7 +44,12 @@ export class CreatePatientDto {
   @IsNotEmpty({ message: 'El apellido es obligatorio' })
   last_name: string;
 
-  @IsDateString({}, { message: 'La fecha de nacimiento debe ser una fecha válida (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    {
+      message: 'La fecha de nacimiento debe ser una fecha válida (YYYY-MM-DD)',
+    },
+  )
   @IsOptional()
   dob?: string;
 
@@ -68,7 +73,9 @@ export class CreatePatientDto {
   occupation?: string;
 
   @IsString({ message: 'El nivel educativo debe ser un texto' })
-  @MaxLength(120, { message: 'El nivel educativo no puede exceder 120 caracteres' })
+  @MaxLength(120, {
+    message: 'El nivel educativo no puede exceder 120 caracteres',
+  })
   @IsOptional()
   education_level?: string;
 
@@ -78,9 +85,12 @@ export class CreatePatientDto {
   address?: string;
 
   @IsString({ message: 'El teléfono debe ser un texto' })
-  @Matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/, {
-    message: 'El teléfono debe tener un formato válido',
-  })
+  @Matches(
+    /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
+    {
+      message: 'El teléfono debe tener un formato válido',
+    },
+  )
   @MaxLength(50, { message: 'El teléfono no puede exceder 50 caracteres' })
   @IsOptional()
   phone?: string;
@@ -89,21 +99,36 @@ export class CreatePatientDto {
   @IsOptional()
   patient_email?: string;
 
-  @IsString({ message: 'El nombre del contacto de emergencia debe ser un texto' })
-  @MaxLength(150, { message: 'El nombre del contacto no puede exceder 150 caracteres' })
+  @IsString({
+    message: 'El nombre del contacto de emergencia debe ser un texto',
+  })
+  @MaxLength(150, {
+    message: 'El nombre del contacto no puede exceder 150 caracteres',
+  })
   @IsOptional()
   emergency_contact_name?: string;
 
-  @IsString({ message: 'La relación del contacto de emergencia debe ser un texto' })
-  @MaxLength(80, { message: 'La relación del contacto no puede exceder 80 caracteres' })
+  @IsString({
+    message: 'La relación del contacto de emergencia debe ser un texto',
+  })
+  @MaxLength(80, {
+    message: 'La relación del contacto no puede exceder 80 caracteres',
+  })
   @IsOptional()
   emergency_contact_relationship?: string;
 
-  @IsString({ message: 'El teléfono del contacto de emergencia debe ser un texto' })
-  @Matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/, {
-    message: 'El teléfono del contacto debe tener un formato válido',
+  @IsString({
+    message: 'El teléfono del contacto de emergencia debe ser un texto',
   })
-  @MaxLength(50, { message: 'El teléfono del contacto no puede exceder 50 caracteres' })
+  @Matches(
+    /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
+    {
+      message: 'El teléfono del contacto debe tener un formato válido',
+    },
+  )
+  @MaxLength(50, {
+    message: 'El teléfono del contacto no puede exceder 50 caracteres',
+  })
   @IsOptional()
   emergency_contact_phone?: string;
 }

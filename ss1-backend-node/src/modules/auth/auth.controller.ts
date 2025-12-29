@@ -6,6 +6,7 @@ import {
   UseGuards,
   UnauthorizedException,
   Get,
+  Patch,
 } from '@nestjs/common';
 import { type Request } from 'express';
 import { AuthService } from './auth.service';
@@ -15,6 +16,7 @@ import { TwoFaVerifyDto } from './dto/twofa-verify.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserModel } from '../users/entities/user.entity';
 
 interface JwtUser {
@@ -162,6 +164,23 @@ export class AuthController {
   getProfile(@Req() req: JwtAuthenticatedRequest) {
     return {
       user: req.user,
+    };
+  }
+
+  /**
+   * Actualizar datos personales del perfil
+   * Permite actualizar username y datos personales (solo para pacientes)
+   * No permite actualizar nombres (first_name, last_name)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch('/me')
+  async updateProfile(
+    @Req() req: JwtAuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    const updatedUser = await this.authService.updateProfile(req.user.id, dto);
+    return {
+      user: this.authService.publicUser(updatedUser),
     };
   }
 

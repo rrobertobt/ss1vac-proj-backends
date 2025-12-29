@@ -9,6 +9,8 @@ from app.core.security import (
     decode_2fa_challenge,
 )
 from app.db.repositories.users_repo import UsersRepo
+from fastapi import HTTPException
+
 MAX_2FA_ATTEMPTS = 5
 TWOFA_TTL_MINUTES = 10
 
@@ -229,3 +231,46 @@ class AuthService:
         )
 
         return {"ok": True}
+
+    async def update_profile(self, user_id: int, profile_data: dict):
+        """
+        Actualiza el perfil del usuario autenticado.
+        Puede actualizar username (users) y datos personales (patients).
+        No permite actualizar nombres (first_name, last_name).
+        """
+        user = await self.users.find_by_id(user_id)
+        if not user or not user.is_active:
+            raise HTTPException(status_code=401, detail="Usuario inválido")
+
+        # Actualizar username si se proporciona
+        if "username" in profile_data and profile_data["username"] is not None:
+            # Verificar si el nuevo username ya existe
+            existing_username = await self.users.find_by_username(profile_data["username"])
+            if existing_username and existing_username.id != user_id:
+                raise HTTPException(status_code=409, detail="El username ya está en uso")
+            
+            await self.users.patch_user(user_id, {"username": profile_data["username"]})
+
+        # Si el usuario es paciente, actualizar datos del paciente
+        if user.patient:
+            patient_update = {}
+            
+            # Mapear campos de perfil a campos de paciente
+            patient_fields = [
+                "phone", "email", "address", "gender", "marital_status",
+                "occupation", "education_level", "emergency_contact_name",
+                "emergency_contact_relationship", "emergency_contact_phone"
+            ]
+            
+            for field in patient_fields:
+                if field in profile_data:
+                    patient_update[field] = profile_data[field]
+            
+            # Si hay campos de paciente para actualizar
+            if patient_update:
+                from app.db.repositories.patients_repo import PatientsRepo
+                patients_repo = PatientsRepo(self.users.db)
+                await patients_repo.update(user.patient.id, patient_update)
+
+        # Retornar el usuario actualizado
+        return await self.users.find_by_id(user_id)

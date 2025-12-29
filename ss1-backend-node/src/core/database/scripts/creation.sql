@@ -437,7 +437,7 @@ CREATE TABLE appointments (
   professional_id INTEGER REFERENCES employees(id) ON DELETE
   SET
     NULL,
-    area_id INTEGER REFERENCES areas(id) ON DELETE
+    specialty_id INTEGER REFERENCES specialties(id) ON DELETE
   SET
     NULL,
     appointment_type VARCHAR(50),

@@ -1,10 +1,18 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Inject,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 import { MailService } from '../mail/mailtrap.service';
 import { UserModel } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { PatientModel } from '../patients/entities/patient.entity';
+import type { ModelClass } from 'objection';
 
 type TwoFaPurpose = 'login' | 'enable' | 'disable';
 
@@ -367,5 +375,80 @@ export class AuthService {
     await this.usersService.update(user.id, updateData);
 
     return { ok: true };
+  }
+
+  // --- Update Profile (datos personales) ---
+  async updateProfile(
+    userId: number,
+    dto: UpdateProfileDto,
+  ): Promise<UserModel> {
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.is_active) {
+      throw new UnauthorizedException('Usuario inválido');
+    }
+
+    const trx = await PatientModel.startTransaction();
+
+    try {
+      // Actualizar username si se proporciona
+      if (dto.username !== undefined) {
+        // Verificar si el nuevo username ya existe
+        const existingUsername = await this.usersService.findByEmailOrUsername(
+          dto.username,
+          trx,
+        );
+        if (existingUsername && existingUsername.id !== userId) {
+          throw new ConflictException('El username ya está en uso');
+        }
+
+        await this.usersService.update(userId, { username: dto.username }, trx);
+      }
+
+      // Si el usuario es paciente, actualizar datos del paciente
+      if (user.patient?.id) {
+        const patientUpdate: Partial<PatientModel> = {};
+
+        // Solo incluir los campos que se proporcionaron en el DTO
+        if (dto.phone !== undefined) patientUpdate.phone = dto.phone;
+        if (dto.email !== undefined) patientUpdate.email = dto.email;
+        if (dto.address !== undefined) patientUpdate.address = dto.address;
+        if (dto.gender !== undefined) patientUpdate.gender = dto.gender;
+        if (dto.marital_status !== undefined)
+          patientUpdate.marital_status = dto.marital_status;
+        if (dto.occupation !== undefined)
+          patientUpdate.occupation = dto.occupation;
+        if (dto.education_level !== undefined)
+          patientUpdate.education_level = dto.education_level;
+        if (dto.emergency_contact_name !== undefined)
+          patientUpdate.emergency_contact_name = dto.emergency_contact_name;
+        if (dto.emergency_contact_relationship !== undefined)
+          patientUpdate.emergency_contact_relationship =
+            dto.emergency_contact_relationship;
+        if (dto.emergency_contact_phone !== undefined)
+          patientUpdate.emergency_contact_phone = dto.emergency_contact_phone;
+
+        // Si hay campos de paciente para actualizar
+        if (Object.keys(patientUpdate).length > 0) {
+          await PatientModel.query(trx).patchAndFetchById(
+            user.patient.id,
+            patientUpdate,
+          );
+        }
+      }
+
+      await trx.commit();
+
+      // Retornar el usuario actualizado con todas sus relaciones
+      const updatedUser = await this.usersService.findById(userId);
+      if (!updatedUser) {
+        throw new UnauthorizedException(
+          'Error al recuperar el usuario actualizado',
+        );
+      }
+      return updatedUser;
+    } catch (error) {
+      await trx.rollback();
+      throw error;
+    }
   }
 }

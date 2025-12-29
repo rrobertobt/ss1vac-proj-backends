@@ -21,6 +21,7 @@ export class PermissionsGuard implements CanActivate {
     if (!requiredPermissions) {
       return true; // No se requiere permiso específico
     }
+    console.log('Required Permissions:', requiredPermissions);
 
     const request = context.switchToHttp().getRequest<{
       user: JwtStrategyRetrun;

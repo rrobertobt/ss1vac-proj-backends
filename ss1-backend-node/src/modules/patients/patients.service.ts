@@ -1,5 +1,12 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePatientDto } from './dto/create-patient.dto';
+import { UpdatePatientDto } from './dto/update-patient.dto';
+import { FilterPatientsDto } from './dto/filter-patients.dto';
 import { PatientModel } from './entities/patient.entity';
 import { UserModel } from '../users/entities/user.entity';
 import { RoleModel } from '../roles/entities/role.entity';
@@ -131,5 +138,98 @@ export class PatientsService {
     }
 
     return password;
+  }
+
+  async findAll(filters: FilterPatientsDto) {
+    const { search, page = 1, limit = 10, status } = filters;
+
+    let query = this.patientModel
+      .query()
+      .withGraphFetched('user.role')
+      .orderBy('created_at', 'desc');
+
+    // Filtro de búsqueda (nombre, apellido, email, teléfono)
+    if (search) {
+      query = query.where((builder) => {
+        builder
+          .where('first_name', 'ilike', `%${search}%`)
+          .orWhere('last_name', 'ilike', `%${search}%`)
+          .orWhere('email', 'ilike', `%${search}%`)
+          .orWhere('phone', 'ilike', `%${search}%`);
+      });
+    }
+
+    // Filtro de estado
+    if (status) {
+      query = query.where('status', status);
+    }
+
+    // Paginación
+    const offset = (page - 1) * limit;
+    const total = await query.resultSize();
+    const patients = await query.limit(limit).offset(offset);
+
+    // Limpiar password_hash de usuarios
+    patients.forEach((patient) => {
+      if (patient.user) {
+        delete patient.user.password_hash;
+      }
+    });
+
+    return {
+      data: patients,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: number) {
+    const patient = await this.patientModel
+      .query()
+      .findById(id)
+      .withGraphFetched('user.role');
+
+    if (!patient) {
+      throw new NotFoundException(`Paciente con ID ${id} no encontrado`);
+    }
+
+    // Limpiar password_hash si existe usuario
+    if (patient.user) {
+      delete patient.user.password_hash;
+    }
+
+    return patient;
+  }
+
+  async update(id: number, updatePatientDto: UpdatePatientDto) {
+    const patient = await this.patientModel.query().findById(id);
+
+    if (!patient) {
+      throw new NotFoundException(`Paciente con ID ${id} no encontrado`);
+    }
+
+    // Actualizar datos del paciente
+    const updatedPatient = await this.patientModel
+      .query()
+      .patchAndFetchById(id, {
+        dob: updatePatientDto.dob ? new Date(updatePatientDto.dob) : undefined,
+        gender: updatePatientDto.gender,
+        marital_status: updatePatientDto.marital_status,
+        occupation: updatePatientDto.occupation,
+        education_level: updatePatientDto.education_level,
+        address: updatePatientDto.address,
+        phone: updatePatientDto.phone,
+        email: updatePatientDto.email,
+        emergency_contact_name: updatePatientDto.emergency_contact_name,
+        emergency_contact_relationship:
+          updatePatientDto.emergency_contact_relationship,
+        emergency_contact_phone: updatePatientDto.emergency_contact_phone,
+      });
+
+    return this.findOne(updatedPatient.id);
   }
 }

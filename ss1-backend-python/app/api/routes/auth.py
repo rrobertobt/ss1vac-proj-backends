@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 from app.db.session import get_db
 from app.db.repositories.users_repo import UsersRepo
@@ -11,7 +12,7 @@ from app.api.deps import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 class LoginBody(BaseModel):
-    email_or_username: str
+    emailOrUsername: str
     password: str
 
 class TwoFaVerifyBody(BaseModel):
@@ -30,6 +31,22 @@ class ChangePasswordBody(BaseModel):
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 
+class UpdateProfileBody(BaseModel):
+    # Usuario (tabla users)
+    username: Optional[str] = Field(None, min_length=3, max_length=100)
+    
+    # Datos personales de paciente (solo aplicable si el usuario es paciente)
+    phone: Optional[str] = Field(None, max_length=50)
+    email: Optional[EmailStr] = Field(None, max_length=255)
+    address: Optional[str] = None
+    gender: Optional[str] = Field(None, max_length=20)
+    marital_status: Optional[str] = Field(None, max_length=30)
+    occupation: Optional[str] = Field(None, max_length=120)
+    education_level: Optional[str] = Field(None, max_length=120)
+    emergency_contact_name: Optional[str] = Field(None, max_length=150)
+    emergency_contact_relationship: Optional[str] = Field(None, max_length=80)
+    emergency_contact_phone: Optional[str] = Field(None, max_length=50)
+
 @router.get("/health")
 async def health_check():
     return {"status": "ok"}
@@ -39,14 +56,14 @@ async def login(body: LoginBody, db: AsyncSession = Depends(get_db)):
     users = UsersRepo(db)
     auth = AuthService(users, MailService())
 
-    user = await auth.authenticate_user(body.email_or_username, body.password)
+    user = await auth.authenticate_user(body.emailOrUsername, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     if not user.two_fa_enabled:
         token = await auth.issue_access_token(user)
         await auth.update_last_login(user.id)
-        return {"access_token": token, "user": auth.public_user(user)}
+        return {"accessToken": token, "user": auth.public_user(user)}
 
     challenge_id = await auth.start_twofa(user.id, "login")
     return {"two_fa_required": True, "challenge_id": challenge_id}
@@ -72,6 +89,21 @@ async def me(current_user=Depends(get_current_user), db: AsyncSession = Depends(
     
     return {
         "user": auth.public_user(current_user)
+    }
+
+@router.patch("/me")
+async def update_profile(body: UpdateProfileBody, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Actualizar datos personales del perfil del usuario autenticado.
+    Permite actualizar username y datos personales (solo para pacientes).
+    No permite actualizar nombres (first_name, last_name).
+    """
+    users = UsersRepo(db)
+    auth = AuthService(users, MailService())
+    
+    updated_user = await auth.update_profile(current_user.id, body.model_dump(exclude_unset=True))
+    return {
+        "user": auth.public_user(updated_user)
     }
 
 @router.post("/2fa/enable/request")

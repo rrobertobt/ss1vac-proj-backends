@@ -4,10 +4,18 @@ from fastapi.exceptions import RequestValidationError
 from app.api.routes.auth import router as auth_router
 from app.api.routes.users import router as users_router
 from app.api.routes.roles import router as roles_router
+from app.api.routes.permissions import router as permissions_router
 from app.api.routes.employees import router as employees_router
 from app.api.routes.patients import router as patients_router
 from app.api.routes.areas import router as areas_router
 from app.api.routes.specialties import router as specialties_router
+from app.api.routes.appointments import router as appointments_router
+from app.api.routes.clinical_records import router as clinical_records_router
+from app.api.routes.patient_tasks import router as patient_tasks_router
+from app.api.routes.confidential_notes import router as confidential_notes_router
+from app.api.routes.sessions import router as sessions_router
+from app.api.routes.reports import router as reports_router
+from app.api.routes.payroll import router as payroll_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="PsiFirm API (Python)")
@@ -87,7 +95,16 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(roles_router)
+app.include_router(permissions_router)
 app.include_router(employees_router)
 app.include_router(patients_router)
 app.include_router(areas_router)
 app.include_router(specialties_router)
+app.include_router(appointments_router)
+app.include_router(clinical_records_router)
+app.include_router(patient_tasks_router)
+app.include_router(confidential_notes_router)
+app.include_router(sessions_router)
+app.include_router(reports_router)
+app.include_router(payroll_router)
+
