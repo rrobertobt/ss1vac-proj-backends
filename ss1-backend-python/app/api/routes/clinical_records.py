@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 
-from app.api.deps import get_db, require_permissions
+from app.api.deps import get_db, require_permissions, get_current_user
 from app.core.permissions import Permission
 from app.db.models import ClinicalRecord, Patient, Employee
 from app.api.routes.clinical_records_schemas import (
@@ -162,7 +162,7 @@ async def list_clinical_records(
 @router.get("/me", response_model=list[ClinicalRecordResponse])
 async def get_my_clinical_records(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_db),  # Solo requiere estar autenticado
+    current_user=Depends(get_current_user),  # Solo requiere estar autenticado
 ):
     """
     Obtener historias clínicas del paciente actual.

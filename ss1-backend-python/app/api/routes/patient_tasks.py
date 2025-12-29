@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.api.deps import get_db, require_permissions
+from app.api.deps import get_db, require_permissions, get_current_user
 from app.core.permissions import Permission
 from app.db.models import PatientTask, Patient, ClinicalRecord
 from app.api.routes.patient_tasks_schemas import (
@@ -85,6 +85,35 @@ async def create_patient_task(
     return new_task
 
 
+@router.get("/me/tasks", response_model=list[PatientTaskResponse])
+async def list_my_tasks(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),  # Solo requiere estar autenticado
+):
+    """
+    Listar tareas del paciente actual.
+    Solo requiere autenticación (para pacientes).
+    """
+    
+    # Verificar que el usuario tiene un patient_id
+    patient_id = current_user.patient.id if (hasattr(current_user, 'patient') and current_user.patient) else None
+    
+    if not patient_id:
+        raise HTTPException(
+            status_code=400,
+            detail="El usuario actual no tiene un paciente asociado"
+        )
+    
+    # Obtener tareas del paciente
+    result = await db.execute(
+        select(PatientTask)
+        .where(PatientTask.patient_id == patient_id)
+        .order_by(PatientTask.created_at.desc())
+    )
+    tasks = result.unique().scalars().all()
+    
+    return tasks
+
 @router.get("/{patient_id}/tasks", response_model=list[PatientTaskResponse])
 async def list_patient_tasks(
     patient_id: int,
@@ -117,34 +146,7 @@ async def list_patient_tasks(
     return tasks
 
 
-@router.get("/me/tasks", response_model=list[PatientTaskResponse])
-async def list_my_tasks(
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_db),  # Solo requiere estar autenticado
-):
-    """
-    Listar tareas del paciente actual.
-    Solo requiere autenticación (para pacientes).
-    """
-    
-    # Verificar que el usuario tiene un patient_id
-    patient_id = current_user.patient.id if (hasattr(current_user, 'patient') and current_user.patient) else None
-    
-    if not patient_id:
-        raise HTTPException(
-            status_code=400,
-            detail="El usuario actual no tiene un paciente asociado"
-        )
-    
-    # Obtener tareas del paciente
-    result = await db.execute(
-        select(PatientTask)
-        .where(PatientTask.patient_id == patient_id)
-        .order_by(PatientTask.created_at.desc())
-    )
-    tasks = result.unique().scalars().all()
-    
-    return tasks
+
 
 
 @router.patch("/tasks/{task_id}", response_model=PatientTaskResponse)
