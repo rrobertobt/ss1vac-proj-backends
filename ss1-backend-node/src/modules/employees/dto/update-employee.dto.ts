@@ -4,7 +4,6 @@ import {
   IsEmail,
   IsIn,
   IsInt,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -17,67 +16,67 @@ import {
 import { Type } from 'class-transformer';
 import { EmployeeAvailabilityDto } from './employee-availability.dto';
 
-export class CreateEmployeeDto {
+export class UpdateEmployeeDto {
   // Datos del usuario
   @IsEmail({}, { message: 'El email debe ser válido' })
-  @IsNotEmpty({ message: 'El email es obligatorio' })
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @IsString({ message: 'El username debe ser un texto' })
   @MinLength(3, { message: 'El username debe tener al menos 3 caracteres' })
   @MaxLength(100, { message: 'El username no puede exceder 100 caracteres' })
-  @IsNotEmpty({ message: 'El username es obligatorio' })
-  username: string;
+  @IsOptional()
+  username?: string;
 
   @IsInt({ message: 'El role_id debe ser un número entero' })
   @Min(1, { message: 'El role_id debe ser mayor a 0' })
-  @IsNotEmpty({ message: 'El role_id es obligatorio' })
-  role_id: number;
+  @IsOptional()
+  role_id?: number;
 
   // Datos del empleado
   @IsString({ message: 'El nombre debe ser un texto' })
   @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
   @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
-  @IsNotEmpty({ message: 'El nombre es obligatorio' })
-  first_name: string;
+  @IsOptional()
+  first_name?: string;
 
   @IsString({ message: 'El apellido debe ser un texto' })
   @MinLength(2, { message: 'El apellido debe tener al menos 2 caracteres' })
   @MaxLength(100, { message: 'El apellido no puede exceder 100 caracteres' })
-  @IsNotEmpty({ message: 'El apellido es obligatorio' })
-  last_name: string;
+  @IsOptional()
+  last_name?: string;
 
   @IsString({ message: 'El número de licencia debe ser un texto' })
   @MaxLength(100, {
     message: 'El número de licencia no puede exceder 100 caracteres',
   })
-  @IsNotEmpty()
-  license_number: string;
+  @IsOptional()
+  license_number?: string;
 
   @IsInt({ message: 'El area_id debe ser un número entero' })
   @Min(1, { message: 'El area_id debe ser mayor a 0' })
-  @IsNotEmpty()
-  area_id: number;
+  @IsOptional()
+  area_id?: number;
 
   @IsNumber({}, { message: 'El salario base debe ser un número' })
   @Min(0, { message: 'El salario base no puede ser negativo' })
   @Max(999999999.99, { message: 'El salario base excede el límite permitido' })
-  @IsNotEmpty()
-  base_salary: number;
+  @IsOptional()
+  base_salary?: number;
 
   @IsNumber({}, { message: 'La tarifa por sesión debe ser un número' })
   @Min(0, { message: 'La tarifa por sesión no puede ser negativa' })
   @Max(999999999.99, {
     message: 'La tarifa por sesión excede el límite permitido',
   })
-  @IsNotEmpty()
-  session_rate: number;
+  @IsOptional()
+  session_rate?: number;
 
   @IsNumber({}, { message: 'El porcentaje IGSS debe ser un número' })
   @Min(0, { message: 'El porcentaje IGSS no puede ser negativo' })
   @Max(100, { message: 'El porcentaje IGSS no puede exceder 100%' })
-  @IsNotEmpty()
-  igss_percentage: number;
+  @IsOptional()
+  igss_percentage?: number;
 
   @IsDateString(
     {},
@@ -86,8 +85,8 @@ export class CreateEmployeeDto {
         'La fecha de contratación debe ser una fecha válida (YYYY-MM-DD)',
     },
   )
-  @IsNotEmpty()
-  hired_at: string;
+  @IsOptional()
+  hired_at?: string;
 
   @IsArray({ message: 'specialty_ids: Las especialidades deben ser un array' })
   @IsInt({

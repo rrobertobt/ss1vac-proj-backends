@@ -4,6 +4,7 @@ import secrets
 import string
 from datetime import time
 from sqlalchemy import text
+from typing import List
 
 from app.api.deps import get_db, require_permissions
 from app.core.permissions import Permission
@@ -12,9 +13,56 @@ from app.db.repositories.employees_repo import EmployeesRepo
 from app.db.repositories.users_repo import UsersRepo
 from app.services.mail_mailtrap import MailService
 from app.api.routes.employees_schemas import EmployeeCreate, EmployeeResponse
+from app.api.routes.employees_update_schemas import EmployeeUpdate
 from app.db.models import EmployeeAvailability
 
 router = APIRouter(prefix="/employees", tags=["employees"])
+
+
+@router.get("")
+async def get_employees(
+    page: int = 1,
+    limit: int = 10,
+    area_id: int | None = None,
+    status: str | None = None,
+    role_id: int | None = None,
+    search: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_permissions(Permission.VIEW_EMPLOYEES)),
+):
+    """
+    Obtener todos los empleados con paginación.
+    Requiere permiso: VIEW_EMPLOYEES
+    """
+    employees_repo = EmployeesRepo(db)
+    result = await employees_repo.get_all(
+        page=page,
+        limit=limit,
+        area_id=area_id,
+        status=status,
+        role_id=role_id,
+        search=search,
+    )
+    return result
+
+
+@router.get("/{employee_id}", response_model=EmployeeResponse)
+async def get_employee(
+    employee_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_permissions(Permission.VIEW_EMPLOYEES)),
+):
+    """
+    Obtener un empleado específico.
+    Requiere permiso: VIEW_EMPLOYEES
+    """
+    employees_repo = EmployeesRepo(db)
+    employee = await employees_repo.find_by_id(employee_id)
+    
+    if not employee:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+    
+    return employee
 
 
 @router.post("", response_model=EmployeeResponse, status_code=201)
@@ -61,7 +109,6 @@ async def create_employee(
             "user_id": user.id,
             "first_name": employee_data.first_name,
             "last_name": employee_data.last_name,
-            "employee_type": employee_data.employee_type,
             "license_number": employee_data.license_number,
             "area_id": employee_data.area_id,
             "base_salary": employee_data.base_salary or 0,
@@ -118,9 +165,17 @@ async def create_employee(
                 end1 = time_to_minutes(avail1.end_time)
                 
                 for avail2 in employee_data.availability[i+1:]:
-                    # Solo verificar traslapes si es el mismo día y especialidad
-                    if (avail1.day_of_week == avail2.day_of_week and 
-                        avail1.specialty_id == avail2.specialty_id):
+                    # Solo verificar traslapes si es el mismo día (sin importar especialidad)
+                    if avail1.day_of_week == avail2.day_of_week:
+                        start2 = time_to_minutes(avail2.start_time)
+                        end2 = time_to_minutes(avail2.end_time)
+                        
+                        # Verificar traslape: (start1 < end2) && (start2 < end1)
+                        if start1 < end2 and start2 < end1:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Conflicto de horarios: {avail1.start_time}-{avail1.end_time} y {avail2.start_time}-{avail2.end_time} se traslapan el día {avail1.day_of_week}"
+                            )
                         start2 = time_to_minutes(avail2.start_time)
                         end2 = time_to_minutes(avail2.end_time)
                         
@@ -197,3 +252,171 @@ def time_to_minutes(time_str: str) -> int:
     """
     hours, minutes = map(int, time_str.split(":"))
     return hours * 60 + minutes
+
+
+@router.patch("/{employee_id}", response_model=EmployeeResponse)
+async def update_employee(
+    employee_id: int,
+    employee_data: EmployeeUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_permissions(Permission.EDIT_EMPLOYEES)),
+):
+    """
+    Actualizar un empleado existente.
+    Requiere permiso: EDIT_EMPLOYEES
+    """
+    users_repo = UsersRepo(db)
+    employees_repo = EmployeesRepo(db)
+
+    # Verificar que el empleado existe
+    employee = await employees_repo.find_by_id(employee_id)
+    if not employee:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+
+    # Verificar email único si se está actualizando
+    if employee_data.email:
+        existing_user = await users_repo.find_by_email(employee_data.email)
+        if existing_user and existing_user.id != employee.user_id:
+            raise HTTPException(status_code=409, detail="El email ya está registrado")
+
+    # Verificar username único si se está actualizando
+    if employee_data.username:
+        existing_username = await users_repo.find_by_username(employee_data.username)
+        if existing_username and existing_username.id != employee.user_id:
+            raise HTTPException(status_code=409, detail="El username ya está registrado")
+
+    try:
+        # Actualizar usuario si hay cambios
+        if employee.user_id and (employee_data.email or employee_data.username or employee_data.role_id):
+            user_updates = {}
+            if employee_data.email is not None:
+                user_updates["email"] = employee_data.email
+            if employee_data.username is not None:
+                user_updates["username"] = employee_data.username
+            if employee_data.role_id is not None:
+                user_updates["role_id"] = employee_data.role_id
+
+            if user_updates:
+                await users_repo.update(employee.user_id, user_updates)
+
+        # Actualizar empleado
+        employee_updates = {}
+        if employee_data.first_name is not None:
+            employee_updates["first_name"] = employee_data.first_name
+        if employee_data.last_name is not None:
+            employee_updates["last_name"] = employee_data.last_name
+        if employee_data.license_number is not None:
+            employee_updates["license_number"] = employee_data.license_number
+        if employee_data.area_id is not None:
+            employee_updates["area_id"] = employee_data.area_id
+        if employee_data.base_salary is not None:
+            employee_updates["base_salary"] = employee_data.base_salary
+        if employee_data.session_rate is not None:
+            employee_updates["session_rate"] = employee_data.session_rate
+        if employee_data.igss_percentage is not None:
+            employee_updates["igss_percentage"] = employee_data.igss_percentage
+        if employee_data.hired_at is not None:
+            employee_updates["hired_at"] = employee_data.hired_at
+
+        if employee_updates:
+            await employees_repo.update(employee_id, employee_updates)
+
+        # Actualizar especialidades si se proporcionaron
+        if employee_data.specialty_ids is not None:
+            # Eliminar especialidades existentes
+            await db.execute(
+                text("DELETE FROM employee_specialties WHERE employee_id = :emp_id"),
+                {"emp_id": employee_id}
+            )
+
+            # Insertar nuevas especialidades
+            if employee_data.specialty_ids:
+                for specialty_id in employee_data.specialty_ids:
+                    await db.execute(
+                        text("INSERT INTO employee_specialties (employee_id, specialty_id) VALUES (:emp_id, :spec_id)"),
+                        {"emp_id": employee_id, "spec_id": specialty_id}
+                    )
+
+        # Actualizar disponibilidad si se proporcionó
+        if employee_data.availability is not None:
+            assigned_specialties = employee_data.specialty_ids or []
+
+            # Solo validar si hay especialidades y disponibilidad
+            if employee_data.availability and assigned_specialties:
+                # Validación 1: Verificar que todos los specialty_ids en availability estén en specialty_ids
+                for avail in employee_data.availability:
+                    if avail.specialty_id and avail.specialty_id not in assigned_specialties:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"La especialidad {avail.specialty_id} en availability no está asignada al empleado"
+                        )
+
+                # Validación 2: Verificar que specialty_ids usados en availability coincidan con los asignados
+                availability_specialty_ids = [
+                    avail.specialty_id for avail in employee_data.availability
+                    if avail.specialty_id is not None
+                ]
+                unique_avail_spec_ids = list(set(availability_specialty_ids))
+
+                missing_specialties = [
+                    spec_id for spec_id in assigned_specialties
+                    if spec_id not in unique_avail_spec_ids
+                ]
+
+                if missing_specialties:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Las especialidades {', '.join(map(str, missing_specialties))} están asignadas pero no tienen horarios de disponibilidad"
+                    )
+
+            # Validación 3: Verificar que no haya traslapes de horarios
+            if employee_data.availability:
+                for i, avail1 in enumerate(employee_data.availability):
+                    start1 = time_to_minutes(avail1.start_time)
+                    end1 = time_to_minutes(avail1.end_time)
+
+                    for avail2 in employee_data.availability[i+1:]:
+                        # Solo verificar traslapes si es el mismo día (sin importar especialidad)
+                        if avail1.day_of_week == avail2.day_of_week:
+                            start2 = time_to_minutes(avail2.start_time)
+                            end2 = time_to_minutes(avail2.end_time)
+
+                            if start1 < end2 and start2 < end1:
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail=f"Conflicto de horarios: {avail1.start_time}-{avail1.end_time} y {avail2.start_time}-{avail2.end_time} se traslapan el día {avail1.day_of_week}"
+                                )
+
+            # Eliminar disponibilidad existente
+            await db.execute(
+                text("DELETE FROM employee_availability WHERE employee_id = :emp_id"),
+                {"emp_id": employee_id}
+            )
+
+            # Insertar nueva disponibilidad
+            if employee_data.availability:
+                for avail in employee_data.availability:
+                    start_parts = avail.start_time.split(":")
+                    end_parts = avail.end_time.split(":")
+
+                    availability = EmployeeAvailability(
+                        employee_id=employee_id,
+                        day_of_week=avail.day_of_week,
+                        start_time=time(int(start_parts[0]), int(start_parts[1])),
+                        end_time=time(int(end_parts[0]), int(end_parts[1])),
+                        specialty_id=avail.specialty_id,
+                        is_active=True,
+                    )
+                    db.add(availability)
+
+        await db.commit()
+        await db.refresh(employee)
+
+        return employee
+
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al actualizar empleado: {str(e)}")

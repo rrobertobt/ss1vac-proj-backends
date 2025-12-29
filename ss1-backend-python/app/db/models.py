@@ -72,7 +72,6 @@ class Employee(Base):
     user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), unique=True, nullable=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    employee_type: Mapped[str] = mapped_column(String(50), nullable=False)
     license_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     area_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("areas.id", ondelete="SET NULL"), nullable=True)
     base_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
@@ -82,6 +81,26 @@ class Employee(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relación con User
+    user: Mapped["User"] = relationship("User", lazy="joined", foreign_keys=[user_id])
+    
+    # Relación con Area
+    area: Mapped["Area"] = relationship("Area", lazy="joined", foreign_keys=[area_id])
+    
+    # Relación con Specialties (many-to-many)
+    specialties: Mapped[list["Specialty"]] = relationship(
+        "Specialty",
+        secondary=employee_specialties,
+        lazy="joined"
+    )
+    
+    # Relación con Availability (one-to-many)
+    availability: Mapped[list["EmployeeAvailability"]] = relationship(
+        "EmployeeAvailability",
+        lazy="joined",
+        foreign_keys="EmployeeAvailability.employee_id"
+    )
 
 class Patient(Base):
     __tablename__ = "patients"

@@ -58,7 +58,6 @@ class EmployeeInfo(BaseModel):
     id: int
     first_name: str
     last_name: str
-    employee_type: str
 
     class Config:
         from_attributes = True

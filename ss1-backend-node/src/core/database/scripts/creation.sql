@@ -92,7 +92,6 @@ CREATE TABLE employees (
     NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    employee_type VARCHAR(50) NOT NULL,
     -- PSYCHOLOGIST, PSYCHIATRIST, TECHNICIAN, MAINTENANCE, ADMIN_STAFF
     license_number VARCHAR(100),
     -- aplica a profesionales
@@ -111,8 +110,6 @@ CREATE TABLE employees (
 );
 
 CREATE INDEX idx_employees_area_id ON employees(area_id);
-
-CREATE INDEX idx_employees_type ON employees(employee_type);
 
 CREATE TABLE employee_specialties (
   employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,

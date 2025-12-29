@@ -75,7 +75,6 @@ export class AuthService {
             id: user.employee.id,
             first_name: user.employee.first_name,
             last_name: user.employee.last_name,
-            employee_type: user.employee.employee_type,
             license_number: user.employee.license_number,
             status: user.employee.status,
           }
