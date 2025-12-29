@@ -24,7 +24,7 @@ router = APIRouter(prefix="/appointments", tags=["appointments"])
 # ============================================
 @router.get("/availability", response_model=AvailabilityResponse)
 async def check_availability(
-    date: str = Query(..., description="Fecha en formato YYYY-MM-DD"),
+    date_str: str = Query(..., alias="date", description="Fecha en formato YYYY-MM-DD"),
     specialtyId: Optional[int] = Query(None, alias="specialtyId"),
     professionalId: Optional[int] = Query(None, alias="professionalId"),
     db: AsyncSession = Depends(get_db),
@@ -37,7 +37,7 @@ async def check_availability(
     Roles permitidos: ADMIN_STAFF, PSYCHOLOGIST, PSYCHIATRIST, SUPER_ADMIN
     """
     try:
-        target_date = date.fromisoformat(date)
+        target_date = date.fromisoformat(date_str)
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
     

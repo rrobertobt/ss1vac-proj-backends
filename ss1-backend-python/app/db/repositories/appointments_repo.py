@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, text
 from app.db.models import Appointment, EmployeeAvailability, Employee, Specialty
-from datetime import datetime, date, time, timedelta
+from datetime import datetime, date, time, timedelta, timezone
 from typing import Optional
 import math
 
@@ -39,7 +39,7 @@ class AppointmentsRepository:
             query = query.where(EmployeeAvailability.employee_id == professional_id)
 
         result = await db.execute(query)
-        availabilities = result.scalars().all()
+        availabilities = result.unique().scalars().all()
 
         # Para cada disponibilidad, generar slots
         all_slots = []
@@ -58,7 +58,7 @@ class AppointmentsRepository:
             )
             
             existing_result = await db.execute(existing_query)
-            existing_appointments = existing_result.scalars().all()
+            existing_appointments = existing_result.unique().scalars().all()
             
             # Generar slots disponibles
             slots = AppointmentsRepository._generate_time_slots(
@@ -92,8 +92,9 @@ class AppointmentsRepository:
         """Generar slots de 1 hora"""
         slots = []
         
-        current_datetime = datetime.combine(target_date, start_time)
-        end_datetime = datetime.combine(target_date, end_time)
+        tzinfo = existing_appointments[0].start_datetime.tzinfo if existing_appointments else timezone.utc
+        current_datetime = datetime.combine(target_date, start_time).replace(tzinfo=tzinfo)
+        end_datetime = datetime.combine(target_date, end_time).replace(tzinfo=tzinfo)
         
         while current_datetime < end_datetime:
             slot_end = current_datetime + timedelta(hours=1)
@@ -212,7 +213,7 @@ class AppointmentsRepository:
         query = query.offset(offset).limit(limit)
         
         result = await db.execute(query)
-        appointments = result.scalars().all()
+        appointments = result.unique().scalars().all()
         
         return {
             "data": appointments,
@@ -234,7 +235,7 @@ class AppointmentsRepository:
         )
         
         result = await db.execute(query)
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     @staticmethod
     async def find_by_professional_id(db: AsyncSession, professional_id: int):
@@ -246,7 +247,7 @@ class AppointmentsRepository:
         )
         
         result = await db.execute(query)
-        return result.scalars().all()
+        return result.unique().scalars().all()
 
     @staticmethod
     async def find_by_id(db: AsyncSession, appointment_id: int) -> Optional[Appointment]:
@@ -254,7 +255,7 @@ class AppointmentsRepository:
         result = await db.execute(
             select(Appointment).where(Appointment.id == appointment_id)
         )
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     @staticmethod
     async def update(
