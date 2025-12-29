@@ -334,8 +334,9 @@ export class AppointmentsService {
     if (dto.professional_id !== undefined)
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       updateData.professional_id = dto.professional_id;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (dto.specialty_id !== undefined) updateData.specialty_id = dto.specialty_id;
+
+    if (dto.specialty_id !== undefined)
+      updateData.specialty_id = dto.specialty_id;
     if (dto.appointment_type !== undefined)
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       updateData.appointment_type = dto.appointment_type;
@@ -357,7 +358,7 @@ export class AppointmentsService {
 
     return AppointmentModel.query()
       .findById(updated.id)
-      .withGraphFetched('[patient, professional, area]');
+      .withGraphFetched('[patient, professional, specialty]');
   }
 
   /**

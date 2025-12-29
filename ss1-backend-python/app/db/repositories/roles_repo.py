@@ -17,7 +17,7 @@ class RolesRepo:
         result = await self.db.execute(
             select(Role).where(Role.id == role_id)
         )
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     async def get_role_permissions(self, role_id: int):
         result = await self.db.execute(
@@ -46,4 +46,3 @@ class RolesRepo:
 
         # Retornar el rol actualizado con sus permisos
         return await self.get_role_permissions(role_id)
-

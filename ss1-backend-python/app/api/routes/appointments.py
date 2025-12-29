@@ -255,12 +255,12 @@ async def cancel_appointment(
 async def complete_appointment(
     appointment_id: int,
     db: AsyncSession = Depends(get_db),
-    _current_user=Depends(require_permissions(Permission.EDIT_APPOINTMENTS)),
+    _current_user=Depends(require_permissions(Permission.COMPLETE_APPOINTMENTS)),
 ):
     """
     Marcar una cita como atendida/completada.
     
-    Requiere permiso: EDIT_APPOINTMENTS
+    Requiere permiso: COMPLETE_APPOINTMENTS
     Roles permitidos: PSYCHOLOGIST, PSYCHIATRIST, SUPER_ADMIN
     """
     try:

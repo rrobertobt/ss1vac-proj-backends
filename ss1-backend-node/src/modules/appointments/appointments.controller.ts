@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -19,6 +20,8 @@ import { JwtAuthGuard } from 'src/core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from 'src/core/auth/guards/permissions.guard';
 import { Permissions } from 'src/core/decorators/permissions.decorator';
 import { Permission } from 'src/core/enums/permissions.enum';
+import { PatientModel } from '../patients/entities/patient.entity';
+import { EmployeeModel } from '../employees/entities/employee.entity';
 
 @Controller('appointments')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -44,22 +47,19 @@ export class AppointmentsController {
    * Roles: PATIENT
    */
   @Get('my-appointments')
-  findMyAppointments(@Req() req: any) {
-    // Obtener patient_id del usuario autenticado
+  async findMyAppointments(@Req() req: any) {
+    // Obtener user_id del usuario autenticado
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const user = req.user;
+    const userId: number = req.user.id;
 
-    // Buscar el patient_id asociado a este user
-    // Asumiendo que tienes una relación en el user
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const patientId = user.patient_id; // O como tengas estructurado tu modelo
+    // Buscar el paciente asociado a este user_id
+    const patient = await PatientModel.query().where('user_id', userId).first();
 
-    if (!patientId) {
-      throw new Error('Usuario no está asociado a un paciente');
+    if (!patient) {
+      throw new NotFoundException('Usuario no está asociado a un paciente');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return this.appointmentsService.findMyAppointments(patientId);
+    return this.appointmentsService.findMyAppointments(patient.id);
   }
 
   /**
@@ -69,21 +69,21 @@ export class AppointmentsController {
    * Roles: PSYCHOLOGIST, PSYCHIATRIST
    */
   @Get('my-professional-appointments')
-  findMyProfessionalAppointments(@Req() req: any) {
-    // Obtener employee_id del usuario autenticado
+  async findMyProfessionalAppointments(@Req() req: any) {
+    // Obtener user_id del usuario autenticado
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const user = req.user;
+    const userId: number = req.user.id;
 
-    // Buscar el employee_id asociado a este user
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const employeeId = user.employee_id; // O como tengas estructurado tu modelo
+    // Buscar el empleado asociado a este user_id
+    const employee = await EmployeeModel.query()
+      .where('user_id', userId)
+      .first();
 
-    if (!employeeId) {
-      throw new Error('Usuario no está asociado a un empleado');
+    if (!employee) {
+      throw new NotFoundException('Usuario no está asociado a un empleado');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return this.appointmentsService.findMyProfessionalAppointments(employeeId);
+    return this.appointmentsService.findMyProfessionalAppointments(employee.id);
   }
 
   /**
@@ -154,11 +154,11 @@ export class AppointmentsController {
   /**
    * F) Marcar como atendida/completada
    * POST /appointments/:id/complete
-   * Permiso: EDIT_APPOINTMENTS
+   * Permiso: COMPLETE_APPOINTMENTS
    * Roles: PSYCHOLOGIST, PSYCHIATRIST, SUPER_ADMIN
    */
   @Post(':id/complete')
-  @Permissions(Permission.EDIT_APPOINTMENTS)
+  @Permissions(Permission.COMPLETE_APPOINTMENTS)
   complete(@Param('id', ParseIntPipe) id: number) {
     return this.appointmentsService.complete(id);
   }
